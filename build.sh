@@ -9,3 +9,7 @@ pip install -r requirements.txt
 python manage.py migrate --noinput
 python manage.py createcachetable
 python manage.py collectstatic --noinput
+
+# Provision demo accounts (admin/supervisor/students + project + tasks).
+# Idempotent: safe to run on every deploy.
+python manage.py seed_demo

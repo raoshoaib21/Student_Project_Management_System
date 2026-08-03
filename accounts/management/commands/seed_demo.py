@@ -14,17 +14,42 @@ User = get_user_model()
 
 SUPERVISOR_PASSWORD = "Supervisor2026!"
 STUDENT_PASSWORD = "Student2026!"
+ADMIN_PASSWORD = "Admin2026!"
 
 
 class Command(BaseCommand):
-    help = "Seed demo data: supervisor, students, a project and tasks."
+    help = "Seed demo data: admin, supervisor, students, a project and tasks."
 
     def handle(self, *args, **options):
+        self._get_or_create_admin()
         supervisor = self._get_or_create_supervisor()
         student1, student2 = self._get_or_create_students()
         project = self._create_project(supervisor, student1, student2)
         self._create_tasks(project, student1, student2)
         self.stdout.write(self.style.SUCCESS("Seed data created successfully."))
+
+    def _get_or_create_admin(self):
+        user, created = User.objects.get_or_create(
+            username="admin",
+            defaults={
+                "email": "admin@example.com",
+                "first_name": "System",
+                "last_name": "Admin",
+                "role": User.Role.SUPERVISOR,
+                "is_active": True,
+                "is_email_verified": True,
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+        user.set_password(ADMIN_PASSWORD)
+        user.is_active = True
+        user.is_email_verified = True
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+        self.stdout.write(f"Admin: admin / {ADMIN_PASSWORD}")
+        return user
 
     def _get_or_create_supervisor(self):
         user, created = User.objects.get_or_create(

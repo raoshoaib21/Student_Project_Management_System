@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">Welcome, {{ user.get_full_name|default:user.username }}!</h4>
+        <span class="text-muted">You are signed in as <strong>{{ user.get_role_display }}</strong>.</span>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Projects</div>
+                        <div class="fs-3 fw-bold">{{ total_projects }}</div>
+                    </div>
+                    <i class="bi bi-folder2-open fs-2 text-primary opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Tasks</div>
+                        <div class="fs-3 fw-bold">{{ total_tasks }}</div>
+                    </div>
+                    <i class="bi bi-list-check fs-2 text-success opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Pending Tasks</div>
+                        <div class="fs-3 fw-bold">{{ pending_tasks }}</div>
+                    </div>
+                    <i class="bi bi-hourglass-split fs-2 text-warning opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small">Completed Tasks</div>
+                        <div class="fs-3 fw-bold">{{ completed_tasks }}</div>
+                    </div>
+                    <i class="bi bi-check2-circle fs-2 text-info opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-folder2-open me-2"></i>My Projects
+                <span class="badge bg-primary ms-1">{{ total_projects }}</span>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">{{ project.title }}</div>
+                                            <div class="text-muted small">{{ project.members.count }} members</div>
+                                        </td>
+                                        <td><span class="badge text-bg-secondary">{{ project.get_status_display }}</span></td>
+                                        <td>{{ project.due_date|default:"—" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        No projects yet. Project management arrives in Week 2.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-clock-history me-2"></i>Recent Activity
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    <ul class="list-unstyled mb-0">
+                        {% for activity in recent_activities %}
+                            <li class="border-bottom py-2">
+                                <div class="fw-semibold">{{ activity.action }}</div>
+                                <div class="text-muted small">
+                                    {{ activity.target|default:"—" }} &middot; {{ activity.created_at|timesince }} ago
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-activity fs-1 d-block mb-2"></i>
+                        No activity recorded yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

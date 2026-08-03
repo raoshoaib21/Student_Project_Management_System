@@ -1,0 +1,65 @@
+{% load static %}
+<aside class="sidebar d-flex flex-column flex-shrink-0 bg-dark text-white p-3">
+    <a href="{% url 'core:dashboard' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <i class="bi bi-kanban me-2 fs-4"></i>
+        <span class="fs-5 fw-semibold">Student PMS</span>
+    </a>
+    <hr class="text-secondary w-100">
+    <ul class="nav nav-pills flex-column gap-1">
+        <li class="nav-item">
+            <a href="{% url 'core:dashboard' %}" class="nav-link text-white {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link text-white disabled" title="Available in Week 2">
+                <i class="bi bi-folder2-open me-2"></i>Projects
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link text-white disabled" title="Available in Week 2">
+                <i class="bi bi-list-check me-2"></i>Tasks
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link text-white disabled" title="Available in Week 3">
+                <i class="bi bi-file-earmark-text me-2"></i>Documents
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link text-white disabled" title="Available in Week 3">
+                <i class="bi bi-clipboard-check me-2"></i>Progress Reports
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link text-white disabled" title="Available in Week 4">
+                <i class="bi bi-bell me-2"></i>Notifications
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link text-white disabled" title="Available in Week 4">
+                <i class="bi bi-clock-history me-2"></i>Activity Log
+            </a>
+        </li>
+    </ul>
+    <hr class="text-secondary w-100">
+    <ul class="nav nav-pills flex-column gap-1">
+        <li class="nav-item">
+            <a href="{% url 'accounts:profile' %}" class="nav-link text-white {% if active_page == 'profile' %}active{% endif %}">
+                <i class="bi bi-person me-2"></i>Profile
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'accounts:password_change' %}" class="nav-link text-white">
+                <i class="bi bi-shield-lock me-2"></i>Change Password
+            </a>
+        </li>
+        {% if user.is_staff %}
+            <li class="nav-item">
+                <a href="{% url 'admin:index' %}" class="nav-link text-white">
+                    <i class="bi bi-gear me-2"></i>Admin
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</aside>

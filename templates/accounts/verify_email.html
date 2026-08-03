@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Email verification | Student PMS{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 520px;">
+    <div class="card border-0 shadow-sm mt-5">
+        <div class="card-body p-5 text-center">
+            {% if verified_user %}
+                {% if verified_user.is_email_verified %}
+                    <i class="bi bi-patch-check fs-1 text-success"></i>
+                    <h4 class="fw-bold mt-3">Email verified</h4>
+                {% else %}
+                    <i class="bi bi-info-circle fs-1 text-primary"></i>
+                    <h4 class="fw-bold mt-3">Almost there</h4>
+                {% endif %}
+            {% else %}
+                <i class="bi bi-x-octagon fs-1 text-danger"></i>
+                <h4 class="fw-bold mt-3">Verification link invalid or expired</h4>
+            {% endif %}
+            <p class="text-muted mt-2">
+                {% if verified_user and verified_user.is_email_verified %}
+                    Your account is active. You can now sign in.
+                {% elif verified_user %}
+                    Please use the link sent to your email to verify your account.
+                {% else %}
+                    Request a new registration with a valid email address.
+                {% endif %}
+            </p>
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary">Go to Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

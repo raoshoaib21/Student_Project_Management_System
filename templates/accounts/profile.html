@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Profile | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">My Profile</h4>
+    <span class="badge text-bg-primary">{{ user.get_role_display }}</span>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                {% if profile_form.instance.avatar %}
+                    <img src="{{ profile_form.instance.avatar.url }}" alt="Avatar"
+                         class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                    <span class="avatar-circle avatar-circle-lg mb-3">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+                {% endif %}
+                <h5 class="fw-bold mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                <p class="text-muted small mb-1">{{ user.email }}</p>
+                <p class="text-muted small mb-0">
+                    {% if user.is_student %}
+                        {{ profile_form.instance.registration_number|default:"No registration number" }}
+                    {% else %}
+                        {{ profile_form.instance.title|default:"Supervisor" }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    <h6 class="fw-bold text-primary mb-3">Account details</h6>
+                    {{ user_form|crispy }}
+                    <hr>
+                    <h6 class="fw-bold text-primary mb-3">
+                        {% if user.is_student %}Student details{% else %}Supervisor details{% endif %}
+                    </h6>
+                    {{ profile_form|crispy }}
+                    <button type="submit" class="btn btn-primary mt-3">
+                        <i class="bi bi-check-lg me-1"></i>Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

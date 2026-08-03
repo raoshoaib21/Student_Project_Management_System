@@ -42,7 +42,7 @@ class Command(BaseCommand):
         user.is_active = True
         user.is_email_verified = True
         user.save()
-        SupervisorProfile.objects.get_or_create(
+        SupervisorProfile.objects.update_or_create(
             user=user,
             defaults={"title": "Senior Lecturer", "department": "Software Engineering"},
         )
@@ -53,8 +53,8 @@ class Command(BaseCommand):
         students = []
         for index, (username, first, last, reg) in enumerate(
             [
-                ("demo_student1", "Ali", "Raza", "SPM-2026-001"),
-                ("demo_student2", "Hina", "Noor", "SPM-2026-002"),
+                ("demo_student1", "Ali", "Raza", "SPM-2026-101"),
+                ("demo_student2", "Hina", "Noor", "SPM-2026-102"),
             ],
             start=1,
         ):
@@ -73,7 +73,7 @@ class Command(BaseCommand):
             user.is_active = True
             user.is_email_verified = True
             user.save()
-            StudentProfile.objects.get_or_create(
+            StudentProfile.objects.update_or_create(
                 user=user,
                 defaults={
                     "registration_number": reg,

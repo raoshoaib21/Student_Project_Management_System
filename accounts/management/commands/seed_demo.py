@@ -12,8 +12,8 @@ from projects.models import Project, ProjectMember, Task
 
 User = get_user_model()
 
-SUPERVISOR_PASSWORD = "TestPass123!"
-STUDENT_PASSWORD = "TestPass123!"
+SUPERVISOR_PASSWORD = "Supervisor2026!"
+STUDENT_PASSWORD = "Student2026!"
 
 
 class Command(BaseCommand):
@@ -28,9 +28,9 @@ class Command(BaseCommand):
 
     def _get_or_create_supervisor(self):
         user, created = User.objects.get_or_create(
-            username="supervisor",
+            username="demo_supervisor",
             defaults={
-                "email": "supervisor@example.com",
+                "email": "demo_supervisor@example.com",
                 "first_name": "Ayesha",
                 "last_name": "Khan",
                 "role": User.Role.SUPERVISOR,
@@ -38,22 +38,23 @@ class Command(BaseCommand):
                 "is_email_verified": True,
             },
         )
-        if created:
-            user.set_password(SUPERVISOR_PASSWORD)
-            user.save()
+        user.set_password(SUPERVISOR_PASSWORD)
+        user.is_active = True
+        user.is_email_verified = True
+        user.save()
         SupervisorProfile.objects.get_or_create(
             user=user,
             defaults={"title": "Senior Lecturer", "department": "Software Engineering"},
         )
-        self.stdout.write(f"Supervisor: supervisor / {SUPERVISOR_PASSWORD}")
+        self.stdout.write(f"Supervisor: demo_supervisor / {SUPERVISOR_PASSWORD}")
         return user
 
     def _get_or_create_students(self):
         students = []
         for index, (username, first, last, reg) in enumerate(
             [
-                ("student1", "Ali", "Raza", "SPM-2026-001"),
-                ("student2", "Hina", "Noor", "SPM-2026-002"),
+                ("demo_student1", "Ali", "Raza", "SPM-2026-001"),
+                ("demo_student2", "Hina", "Noor", "SPM-2026-002"),
             ],
             start=1,
         ):
@@ -68,9 +69,10 @@ class Command(BaseCommand):
                     "is_email_verified": True,
                 },
             )
-            if created:
-                user.set_password(STUDENT_PASSWORD)
-                user.save()
+            user.set_password(STUDENT_PASSWORD)
+            user.is_active = True
+            user.is_email_verified = True
+            user.save()
             StudentProfile.objects.get_or_create(
                 user=user,
                 defaults={

@@ -34,12 +34,19 @@ services:
         fromDatabase:
           name: student-pms-db
           property: connectionString
-      # Optional SMTP for real verification/reset emails (leave blank to disable):
+      # Gmail SMTP for live verification/reset emails (optional).
+      # Requires: Google account with 2FA enabled -> Account -> Security ->
+      # App passwords -> generate one for "Mail". Add these to the service's
+      # Environment tab; uncommenting here is only for blueprint deployments.
       # - key: DEFAULT_FROM_EMAIL
-      #   value: Student PMS <noreply@yourdomain.com>
+      #   value: Student PMS <your-email@gmail.com>
       # - key: EMAIL_HOST
-      #   value: smtp.yourprovider.com
+      #   value: smtp.gmail.com
+      # - key: EMAIL_PORT
+      #   value: "587"
+      # - key: EMAIL_USE_TLS
+      #   value: "True"
       # - key: EMAIL_HOST_USER
-      #   value: noreply@yourdomain.com
+      #   value: your-email@gmail.com
       # - key: EMAIL_HOST_PASSWORD
-      #   value: your-smtp-password
+      #   value: your-16-char-app-password

@@ -1,8 +1,11 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, PasswordChangeView
-from django.core.mail import send_mail
+from django.core.mail.backends.console import EmailBackend as ConsoleEmailBackend
+from django.core.mail.message import EmailMessage
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
@@ -19,6 +22,8 @@ from .forms import (
 )
 from .models import StudentProfile, SupervisorProfile, User
 from .tokens import EMAIL_TOKEN_MAX_AGE, generate_email_token, verify_email_token
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(FormView):
@@ -38,7 +43,12 @@ class RegisterView(FormView):
             f"This link expires in {EMAIL_TOKEN_MAX_AGE // 3600} hours.\n"
             "If you did not register, you can safely ignore this email."
         )
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
+        message = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
+        try:
+            message.send()
+        except Exception:
+            logger.exception("Failed to send verification email to %s; falling back to console", user.email)
+            ConsoleEmailBackend().send_messages([message])
         log_activity(user, "registered an account")
         return redirect("accounts:register_done")
 

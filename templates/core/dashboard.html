@@ -4,9 +4,12 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-0">Welcome, {{ user.get_full_name|default:user.username }}!</h4>
-        <span class="text-muted">You are signed in as <strong>{{ user.get_role_display }}</strong>.</span>
-    </div>
+                    <h4 class="fw-bold mb-0">Welcome, {{ user.get_full_name|default:user.username }}!</h4>
+                    <span class="text-muted">You are signed in as <strong>{{ user.get_role_display }}</strong>.</span>
+                </div>
+                <a href="{% url 'projects:project_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>New Project
+                </a>
 </div>
 
 <div class="row g-3 mb-4">
@@ -86,10 +89,14 @@
                                 {% for project in projects %}
                                     <tr>
                                         <td>
-                                            <div class="fw-semibold">{{ project.title }}</div>
+                                            <div class="fw-semibold">
+                                                <a href="{{ project.get_absolute_url }}" class="text-decoration-none">{{ project.title }}</a>
+                                            </div>
                                             <div class="text-muted small">{{ project.members.count }} members</div>
                                         </td>
-                                        <td><span class="badge text-bg-secondary">{{ project.get_status_display }}</span></td>
+                                        <td>
+                                            <span class="badge text-bg-{% if project.status == 'COMPLETED' %}success{% elif project.status == 'ON_HOLD' %}warning{% elif project.status == 'CANCELLED' %}danger{% else %}primary{% endif %}">{{ project.get_status_display }}</span>
+                                        </td>
                                         <td>{{ project.due_date|default:"—" }}</td>
                                     </tr>
                                 {% endfor %}
@@ -99,11 +106,58 @@
                 {% else %}
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No projects yet. Project management arrives in Week 2.
+                        No projects yet. <a href="{% url 'projects:project_create' %}">Create your first project</a>.
                     </div>
                 {% endif %}
             </div>
         </div>
+        {% if user.is_student %}
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-list-check me-2"></i>My Tasks
+                    <a href="{% url 'projects:task_list' %}?assigned=me" class="btn btn-sm btn-link float-end">View all</a>
+                </div>
+                <div class="card-body">
+                    {% if my_tasks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Task</th>
+                                        <th>Project</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Due</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in my_tasks|slice:":8" %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'projects:task_update' task.pk %}" class="text-decoration-none fw-semibold">{{ task.title }}</a>
+                                            </td>
+                                            <td><a href="{{ task.project.get_absolute_url }}" class="text-decoration-none">{{ task.project.title }}</a></td>
+                                            <td>
+                                                <span class="badge text-bg-{% if task.priority == 'URGENT' %}danger{% elif task.priority == 'HIGH' %}warning{% elif task.priority == 'MEDIUM' %}info{% else %}secondary{% endif %}">{{ task.get_priority_display }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge text-bg-{% if task.status == 'DONE' %}success{% elif task.status == 'REVIEW' %}primary{% elif task.status == 'IN_PROGRESS' %}warning{% else %}secondary{% endif %}">{{ task.get_status_display }}</span>
+                                            </td>
+                                            <td>{{ task.due_date|default:"—" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-check2-all fs-1 d-block mb-2"></i>
+                            No tasks assigned to you.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
     </div>
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm h-100">

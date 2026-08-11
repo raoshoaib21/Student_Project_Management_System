@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Tasks | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-list-check me-2"></i>Tasks</h4>
+        <span class="text-muted">Tasks across all your projects.</span>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control"
+               placeholder="Search tasks...">
+    </div>
+    <div class="col-md-2">
+        <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="priority" class="form-select">
+            <option value="">All priorities</option>
+            {% for value, label in priority_choices %}
+                <option value="{{ value }}" {% if request.GET.priority == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="assigned" class="form-select">
+            <option value="">Everyone</option>
+            <option value="me" {% if request.GET.assigned == 'me' %}selected{% endif %}>Assigned to me</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+        <a href="{% url 'projects:task_list' %}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+{% if tasks %}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Project</th>
+                        <th>Assignee</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Due</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'projects:task_update' task.pk %}" class="text-decoration-none fw-semibold">{{ task.title }}</a>
+                                {% if task.description %}
+                                    <div class="text-muted small">{{ task.description|truncatechars:50 }}</div>
+                                {% endif %}
+                            </td>
+                            <td><a href="{{ task.project.get_absolute_url }}" class="text-decoration-none">{{ task.project.title }}</a></td>
+                            <td>{{ task.assignee|default:"Unassigned" }}</td>
+                            <td>
+                                <span class="badge text-bg-{% if task.priority == 'URGENT' %}danger{% elif task.priority == 'HIGH' %}warning{% elif task.priority == 'MEDIUM' %}info{% else %}secondary{% endif %}">
+                                    {{ task.get_priority_display }}
+                                </span>
+                            </td>
+                            <td><span class="badge text-bg-{% if task.status == 'DONE' %}success{% elif task.status == 'REVIEW' %}primary{% elif task.status == 'IN_PROGRESS' %}warning{% else %}secondary{% endif %}">{{ task.get_status_display }}</span></td>
+                            <td>{{ task.due_date|default:"—" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        <nav class="mt-4" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-list-check fs-1 d-block mb-2"></i>
+            {% if request.GET.q or request.GET.status or request.GET.priority or request.GET.assigned %}
+                No tasks match your filters.
+            {% else %}
+                No tasks yet. Tasks from your projects will appear here.
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

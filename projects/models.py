@@ -42,6 +42,11 @@ class Project(models.Model):
     def member_count(self):
         return self.members.count()
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("projects:project_detail", args=[self.pk])
+
 
 class ProjectMember(models.Model):
     class Role(models.TextChoices):

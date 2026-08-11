@@ -24,6 +24,7 @@ def dashboard(request):
     my_tasks = tasks.filter(assignee=user) if user.is_student else Task.objects.none()
 
     context = {
+        "active_page": "dashboard",
         "projects": projects,
         "total_projects": projects.count(),
         "total_tasks": tasks.count(),

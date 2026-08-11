@@ -12,12 +12,12 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white disabled" title="Available in Week 2">
+            <a href="{% url 'projects:project_list' %}" class="nav-link text-white {% if active_page == 'projects' %}active{% endif %}">
                 <i class="bi bi-folder2-open me-2"></i>Projects
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white disabled" title="Available in Week 2">
+            <a href="{% url 'projects:task_list' %}" class="nav-link text-white {% if active_page == 'tasks' %}active{% endif %}">
                 <i class="bi bi-list-check me-2"></i>Tasks
             </a>
         </li>

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Progress Reports | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-check me-2"></i>Progress Reports</h4>
+        <span class="text-muted">Weekly progress reports across your projects.</span>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control"
+               placeholder="Search reports...">
+    </div>
+    <div class="col-md-2">
+        <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="project" class="form-select">
+            <option value="">All projects</option>
+            {% for project in projects %}
+                <option value="{{ project.pk }}" {% if request.GET.project == project.pk|stringformat:"s" %}selected{% endif %}>{{ project.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+        <a href="{% url 'progress:report_list' %}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+{% if reports %}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Week</th>
+                        <th>Project</th>
+                        <th>Author</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                        <tr>
+                            <td class="fw-semibold">Week {{ report.week_number }}</td>
+                            <td><a href="{{ report.project.get_absolute_url }}" class="text-decoration-none">{{ report.project.title }}</a></td>
+                            <td>{{ report.author }}</td>
+                            <td>
+                                <span class="badge text-bg-{% if report.status == 'APPROVED' %}success{% elif report.status == 'NEEDS_REVISION' %}danger{% elif report.status == 'SUBMITTED' %}primary{% else %}secondary{% endif %}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ report.created_at|date:"M j, Y" }}</td>
+                            <td class="text-end">
+                                <a href="{{ report.get_absolute_url }}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        <nav class="mt-4" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-clipboard-check fs-1 d-block mb-2"></i>
+            {% if request.GET.q or request.GET.status or request.GET.project %}
+                No reports match your filters.
+            {% else %}
+                No progress reports yet. Create one from any project's detail page.
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

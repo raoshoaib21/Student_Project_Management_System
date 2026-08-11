@@ -22,22 +22,22 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white disabled" title="Available in Week 3">
+            <a href="{% url 'documents:document_list' %}" class="nav-link text-white {% if active_page == 'documents' %}active{% endif %}">
                 <i class="bi bi-file-earmark-text me-2"></i>Documents
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white disabled" title="Available in Week 3">
+            <a href="{% url 'progress:report_list' %}" class="nav-link text-white {% if active_page == 'progress' %}active{% endif %}">
                 <i class="bi bi-clipboard-check me-2"></i>Progress Reports
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white disabled" title="Available in Week 4">
+            <a href="{% url 'core:notification_list' %}" class="nav-link text-white {% if active_page == 'notifications' %}active{% endif %}">
                 <i class="bi bi-bell me-2"></i>Notifications
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link text-white disabled" title="Available in Week 4">
+            <a href="{% url 'core:activity_log' %}" class="nav-link text-white {% if active_page == 'activity_log' %}active{% endif %}">
                 <i class="bi bi-clock-history me-2"></i>Activity Log
             </a>
         </li>

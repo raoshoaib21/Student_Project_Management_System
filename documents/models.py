@@ -26,6 +26,11 @@ class Document(models.Model):
     def __str__(self):
         return self.name or self.file.name
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("documents:document_detail", args=[self.pk])
+
     def save(self, *args, **kwargs):
         if self.file:
             self.size = self.file.size

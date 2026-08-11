@@ -78,3 +78,76 @@ class CoreViewTests(TestCase):
         response = self.client.get("/dashboard/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Dashboard")
+
+
+class NotificationViewTests(TestCase):
+    def setUp(self):
+        self.student = User.objects.create_user(username="stu", email="stu@example.com", password="x")
+        self.student.role = User.Role.STUDENT
+        self.student.save()
+        Notification.objects.create(user=self.student, title="Unread one", url="/dashboard/")
+        Notification.objects.create(user=self.student, title="Read one", is_read=True, url="/dashboard/")
+
+    def test_list_requires_login(self):
+        response = self.client.get(reverse("core:notification_list"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_list_filters(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("core:notification_list"))
+        self.assertEqual(response.context["notifications"].count(), 2)
+        response = self.client.get(reverse("core:notification_list"), {"filter": "unread"})
+        self.assertEqual(response.context["notifications"].count(), 1)
+        response = self.client.get(reverse("core:notification_list"), {"filter": "read"})
+        self.assertEqual(response.context["notifications"].count(), 1)
+
+    def test_read_marks_and_redirects(self):
+        self.client.force_login(self.student)
+        notification = self.student.notifications.get(title="Unread one")
+        response = self.client.get(reverse("core:notification_read", args=[notification.pk]))
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+        self.assertRedirects(response, notification.url)
+
+    def test_read_ignores_other_users_notifications(self):
+        other = User.objects.create_user(username="other", email="other@example.com", password="x")
+        other.role = User.Role.STUDENT
+        other.save()
+        Notification.objects.create(user=other, title="Other's note", url="/dashboard/")
+        self.client.force_login(self.student)
+        other_notification = other.notifications.get()
+        response = self.client.get(reverse("core:notification_read", args=[other_notification.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_read_all(self):
+        self.client.force_login(self.student)
+        response = self.client.post(reverse("core:notification_read_all"))
+        self.assertEqual(self.student.notifications.filter(is_read=False).count(), 0)
+        self.assertRedirects(response, reverse("core:notification_list"))
+
+    def test_unauthenticated_read_all_rejected(self):
+        response = self.client.post(reverse("core:notification_read_all"))
+        self.assertEqual(response.status_code, 302)
+
+
+class ActivityLogViewTests(TestCase):
+    def setUp(self):
+        self.student = User.objects.create_user(username="stu", email="stu@example.com", password="x")
+        self.student.role = User.Role.STUDENT
+        self.student.save()
+        log_activity(self.student, "created project", "P1")
+        log_activity(self.student, "updated task", "T1")
+
+    def test_log_requires_login(self):
+        response = self.client.get(reverse("core:activity_log"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_log_lists_user_activity(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("core:activity_log"))
+        self.assertEqual(response.context["activities"].count(), 2)
+
+    def test_log_search(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("core:activity_log"), {"q": "created"})
+        self.assertEqual(response.context["activities"].count(), 1)

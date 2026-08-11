@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Notifications | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-bell me-2"></i>Notifications</h4>
+        <span class="text-muted">{{ unread_count }} unread</span>
+    </div>
+    <form method="post" action="{% url 'core:notification_read_all' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-check2-all me-1"></i>Mark all as read
+        </button>
+    </form>
+</div>
+
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if not filter_type %}active{% endif %}" href="{% url 'core:notification_list' %}">All</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if filter_type == 'unread' %}active{% endif %}" href="{% url 'core:notification_list' %}?filter=unread">Unread</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if filter_type == 'read' %}active{% endif %}" href="{% url 'core:notification_list' %}?filter=read">Read</a>
+    </li>
+</ul>
+
+{% if notifications %}
+    <div class="card border-0 shadow-sm">
+        <ul class="list-group list-group-flush">
+            {% for notification in notifications %}
+                <li class="list-group-item {% if not notification.is_read %}list-group-item-primary{% endif %}">
+                    <a href="{% url 'core:notification_read' notification.pk %}" class="text-decoration-none">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold {% if not notification.is_read %}text-primary{% endif %}">
+                                    {{ notification.title }}
+                                    {% if not notification.is_read %}<span class="badge bg-primary ms-1">New</span>{% endif %}
+                                </div>
+                                {% if notification.message %}
+                                    <div class="text-muted small">{{ notification.message }}</div>
+                                {% endif %}
+                                <div class="text-muted small">{{ notification.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+            No notifications here.
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

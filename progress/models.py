@@ -31,6 +31,11 @@ class ProgressReport(models.Model):
     def __str__(self):
         return f"Week {self.week_number} - {self.project}"
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("progress:report_detail", args=[self.pk])
+
 
 class Feedback(models.Model):
     progress_report = models.ForeignKey(

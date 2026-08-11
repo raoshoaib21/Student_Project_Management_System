@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Documents | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-text me-2"></i>Documents</h4>
+        <span class="text-muted">Files shared across your projects.</span>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-5">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control"
+               placeholder="Search by name or description...">
+    </div>
+    <div class="col-md-3">
+        <select name="project" class="form-select">
+            <option value="">All projects</option>
+            {% for project in projects %}
+                <option value="{{ project.pk }}" {% if request.GET.project == project.pk|stringformat:"s" %}selected{% endif %}>{{ project.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+        <a href="{% url 'documents:document_list' %}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+</form>
+
+{% if documents %}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Project</th>
+                        <th>Uploaded by</th>
+                        <th>Type</th>
+                        <th>Size</th>
+                        <th>Uploaded</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in documents %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'documents:document_detail' document.pk %}" class="text-decoration-none fw-semibold">
+                                    <i class="bi bi-file-earmark me-1"></i>{{ document.name }}
+                                </a>
+                            </td>
+                            <td><a href="{{ document.project.get_absolute_url }}" class="text-decoration-none">{{ document.project.title }}</a></td>
+                            <td>{{ document.uploaded_by }}</td>
+                            <td><span class="badge text-bg-light border">{{ document.file_type|upper|default:"—" }}</span></td>
+                            <td>{{ document.size|filesizeformat }}</td>
+                            <td>{{ document.uploaded_at|date:"M j, Y" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'documents:document_download' document.pk %}" class="btn btn-sm btn-outline-primary" title="Download">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        <nav class="mt-4" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>
+            {% if request.GET.q or request.GET.project %}
+                No documents match your filters.
+            {% else %}
+                No documents yet. Upload a file from any project's detail page.
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

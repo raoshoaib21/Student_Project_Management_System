@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ document.name }} | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-text me-2"></i>{{ document.name }}</h4>
+        <span class="text-muted">
+            <a href="{{ document.project.get_absolute_url }}" class="text-decoration-none">{{ document.project.title }}</a>
+            &middot; uploaded by <strong>{{ document.uploaded_by }}</strong>
+        </span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'documents:document_download' document.pk %}" class="btn btn-primary">
+            <i class="bi bi-download me-1"></i>Download
+        </a>
+        {% if can_manage %}
+            <a href="{% url 'documents:document_update' document.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            <a href="{% url 'documents:document_delete' document.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width: 760px;">
+    <div class="card-body">
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">File type</div>
+                <div class="fw-semibold">{{ document.file_type|upper|default:"—" }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Size</div>
+                <div class="fw-semibold">{{ document.size|filesizeformat }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Uploaded</div>
+                <div class="fw-semibold">{{ document.uploaded_at|date:"M j, Y H:i" }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted small">Uploaded by</div>
+                <div class="fw-semibold">{{ document.uploaded_by }}</div>
+            </div>
+        </div>
+        <h6 class="fw-semibold text-muted mb-1">Description</h6>
+        <p class="mb-0">{{ document.description|default:"No description provided."|linebreaksbr }}</p>
+    </div>
+</div>
+{% endblock %}

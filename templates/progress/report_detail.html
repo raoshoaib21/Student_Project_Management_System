@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Week {{ report.week_number }} Report | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            Week {{ report.week_number }} Report
+            <span class="badge text-bg-{% if report.status == 'APPROVED' %}success{% elif report.status == 'NEEDS_REVISION' %}danger{% elif report.status == 'SUBMITTED' %}primary{% else %}secondary{% endif %} align-middle">
+                {{ report.get_status_display }}
+            </span>
+        </h4>
+        <span class="text-muted">
+            <a href="{{ report.project.get_absolute_url }}" class="text-decoration-none">{{ report.project.title }}</a>
+            &middot; by <strong>{{ report.author }}</strong>
+        </span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'progress:report_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>All Reports
+        </a>
+        {% if report.status == 'DRAFT' and report.author == user %}
+            <form method="post" action="{% url 'progress:report_submit' report.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-1"></i>Submit for Review
+                </button>
+            </form>
+        {% endif %}
+        {% if report.status == 'SUBMITTED' and can_give_feedback %}
+            <form method="post" action="{% url 'progress:report_review' report.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+            </form>
+            <form method="post" action="{% url 'progress:report_review' report.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="revision">
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-arrow-repeat me-1"></i>Request Revision
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="fw-semibold text-primary mb-2"><i class="bi bi-card-text me-1"></i>Summary</h6>
+                <p>{{ report.summary|linebreaksbr }}</p>
+
+                {% if report.achievements %}
+                    <h6 class="fw-semibold text-success mt-4 mb-2"><i class="bi bi-trophy me-1"></i>Achievements</h6>
+                    <p>{{ report.achievements|linebreaksbr }}</p>
+                {% endif %}
+
+                {% if report.next_week_plan %}
+                    <h6 class="fw-semibold text-info mt-4 mb-2"><i class="bi bi-calendar-plus me-1"></i>Next Week Plan</h6>
+                    <p>{{ report.next_week_plan|linebreaksbr }}</p>
+                {% endif %}
+
+                {% if report.blockers %}
+                    <h6 class="fw-semibold text-danger mt-4 mb-2"><i class="bi bi-exclamation-octagon me-1"></i>Blockers</h6>
+                    <p>{{ report.blockers|linebreaksbr }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_edit %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <a href="{% url 'progress:report_update' report.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Edit Report
+                    </a>
+                    <a href="{% url 'progress:report_delete' report.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-chat-dots me-2"></i>Feedback
+                <span class="badge bg-primary ms-1">{{ feedbacks|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if feedbacks %}
+                    {% for feedback in feedbacks %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="fw-semibold small">{{ feedback.author }}
+                                <span class="text-muted fw-normal">&middot; {{ feedback.created_at|date:"M j, Y H:i" }}</span>
+                            </div>
+                            <div class="text-muted small">{{ feedback.content|linebreaksbr }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center mb-0 py-3">No feedback yet.</p>
+                {% endif %}
+
+                {% if feedback_form %}
+                    <hr>
+                    <h6 class="fw-semibold text-primary mb-3">Add feedback</h6>
+                    {% crispy feedback_form %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

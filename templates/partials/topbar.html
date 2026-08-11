@@ -25,7 +25,22 @@
                             Notifications
                             <span class="text-muted fw-normal">({{ unread_notifications }} unread)</span>
                         </div>
-                        <div class="p-3 text-center text-muted">Notifications arrive in Week 4.</div>
+                        <div>
+                            {% for notification in user.notifications.all|slice:":5" %}
+                                <a href="{% url 'core:notification_read' notification.pk %}"
+                                   class="dropdown-item {% if not notification.is_read %}bg-primary-subtle{% endif %}">
+                                    <div class="fw-semibold small">{{ notification.title }}</div>
+                                    <div class="text-muted small">{{ notification.created_at|timesince }} ago</div>
+                                </a>
+                            {% empty %}
+                                <div class="p-3 text-center text-muted">You're all caught up.</div>
+                            {% endfor %}
+                        </div>
+                        <div class="dropdown-header border-top py-2">
+                            <a href="{% url 'core:notification_list' %}" class="btn btn-sm btn-outline-primary w-100">
+                                View all notifications
+                            </a>
+                        </div>
                     </div>
                 </li>
                 <li class="nav-item dropdown">

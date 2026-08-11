@@ -105,6 +105,10 @@ class ProjectDetailView(LoginRequiredMixin,ProjectViewAccessMixin, DetailView):
         context["tasks"] = self.object.tasks.select_related("assignee").order_by("status", _task_priority_order())
         context["is_manager"] = is_project_manager(self.request.user, self.object)
         context["task_status_choices"] = Task.Status.choices
+        context["documents"] = self.object.documents.select_related("uploaded_by")[:5]
+        context["documents_count"] = self.object.documents.count()
+        context["reports"] = self.object.progress_reports.select_related("author")[:5]
+        context["reports_count"] = self.object.progress_reports.count()
         return context
 
 

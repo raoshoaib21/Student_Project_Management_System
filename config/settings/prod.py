@@ -9,6 +9,10 @@ from .base import BASE_DIR, env
 DEBUG = env("DEBUG", default=False)
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=[])
 
+# Origins allowed for POST/CSRF (needed when traffic arrives via a proxy/CDN).
+# Comma-separated, e.g. https://student-pms.onrender.com,https://example.com
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS", default=[])
+
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

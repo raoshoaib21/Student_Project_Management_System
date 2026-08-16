@@ -1,11 +1,14 @@
 {% load static %}
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-3">
+<nav class="topbar navbar navbar-expand-lg navbar-light">
     <div class="container-fluid">
-        <span class="navbar-brand d-lg-none fw-semibold"><i class="bi bi-kanban me-2"></i>Student PMS</span>
+        <span class="navbar-brand d-lg-none">
+            <span class="brand-logo" style="width:34px;height:34px;font-size:.95rem;"><i class="bi bi-kanban"></i></span>
+            Student PMS
+        </span>
         <form class="d-none d-lg-flex me-auto" role="search">
             <div class="input-group input-group-sm w-auto">
-                <input type="search" class="form-control" placeholder="Search projects, tasks..." aria-label="Search">
-                <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
+                <input type="search" class="form-control search-input" placeholder="Search projects, tasks..." aria-label="Search">
+                <button class="btn btn-outline-secondary search-btn" type="button"><i class="bi bi-search"></i></button>
             </div>
         </form>
 

@@ -1,63 +1,65 @@
 {% load static %}
-<aside class="sidebar d-flex flex-column flex-shrink-0 bg-dark text-white p-3">
-    <a href="{% url 'core:dashboard' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        <i class="bi bi-kanban me-2 fs-4"></i>
-        <span class="fs-5 fw-semibold">Student PMS</span>
+<aside class="sidebar d-flex flex-column flex-shrink-0 text-white">
+    <a href="{% url 'core:dashboard' %}" class="sidebar-brand">
+        <span class="brand-logo"><i class="bi bi-kanban"></i></span>
+        <span class="sidebar-brand-text">Student PMS</span>
     </a>
-    <hr class="text-secondary w-100">
+
+    <div class="sidebar-section-label">Main</div>
     <ul class="nav nav-pills flex-column gap-1">
         <li class="nav-item">
-            <a href="{% url 'core:dashboard' %}" class="nav-link text-white {% if active_page == 'dashboard' %}active{% endif %}">
-                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            <a href="{% url 'core:dashboard' %}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'projects:project_list' %}" class="nav-link text-white {% if active_page == 'projects' %}active{% endif %}">
-                <i class="bi bi-folder2-open me-2"></i>Projects
+            <a href="{% url 'projects:project_list' %}" class="nav-link {% if active_page == 'projects' %}active{% endif %}">
+                <i class="bi bi-folder2-open"></i><span>Projects</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'projects:task_list' %}" class="nav-link text-white {% if active_page == 'tasks' %}active{% endif %}">
-                <i class="bi bi-list-check me-2"></i>Tasks
+            <a href="{% url 'projects:task_list' %}" class="nav-link {% if active_page == 'tasks' %}active{% endif %}">
+                <i class="bi bi-list-check"></i><span>Tasks</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'documents:document_list' %}" class="nav-link text-white {% if active_page == 'documents' %}active{% endif %}">
-                <i class="bi bi-file-earmark-text me-2"></i>Documents
+            <a href="{% url 'documents:document_list' %}" class="nav-link {% if active_page == 'documents' %}active{% endif %}">
+                <i class="bi bi-file-earmark-text"></i><span>Documents</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'progress:report_list' %}" class="nav-link text-white {% if active_page == 'progress' %}active{% endif %}">
-                <i class="bi bi-clipboard-check me-2"></i>Progress Reports
+            <a href="{% url 'progress:report_list' %}" class="nav-link {% if active_page == 'progress' %}active{% endif %}">
+                <i class="bi bi-clipboard-check"></i><span>Progress Reports</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'core:notification_list' %}" class="nav-link text-white {% if active_page == 'notifications' %}active{% endif %}">
-                <i class="bi bi-bell me-2"></i>Notifications
+            <a href="{% url 'core:notification_list' %}" class="nav-link {% if active_page == 'notifications' %}active{% endif %}">
+                <i class="bi bi-bell"></i><span>Notifications</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'core:activity_log' %}" class="nav-link text-white {% if active_page == 'activity_log' %}active{% endif %}">
-                <i class="bi bi-clock-history me-2"></i>Activity Log
+            <a href="{% url 'core:activity_log' %}" class="nav-link {% if active_page == 'activity_log' %}active{% endif %}">
+                <i class="bi bi-clock-history"></i><span>Activity Log</span>
             </a>
         </li>
     </ul>
-    <hr class="text-secondary w-100">
+
+    <div class="sidebar-section-label">Account</div>
     <ul class="nav nav-pills flex-column gap-1">
         <li class="nav-item">
-            <a href="{% url 'accounts:profile' %}" class="nav-link text-white {% if active_page == 'profile' %}active{% endif %}">
-                <i class="bi bi-person me-2"></i>Profile
+            <a href="{% url 'accounts:profile' %}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
+                <i class="bi bi-person"></i><span>Profile</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'accounts:password_change' %}" class="nav-link text-white">
-                <i class="bi bi-shield-lock me-2"></i>Change Password
+            <a href="{% url 'accounts:password_change' %}" class="nav-link">
+                <i class="bi bi-shield-lock"></i><span>Change Password</span>
             </a>
         </li>
         {% if user.is_staff %}
             <li class="nav-item">
-                <a href="{% url 'admin:index' %}" class="nav-link text-white">
-                    <i class="bi bi-gear me-2"></i>Admin
+                <a href="{% url 'admin:index' %}" class="nav-link">
+                    <i class="bi bi-gear"></i><span>Admin</span>
                 </a>
             </li>
         {% endif %}

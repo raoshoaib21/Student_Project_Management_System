@@ -92,6 +92,17 @@ class DocumentViewTests(TestCase):
         self.assertEqual(self.document.description, "Final design")
         self.assertRedirects(response, self.document.get_absolute_url())
 
+    def test_update_description_without_new_file(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("documents:document_update", args=[self.document.pk]),
+            {"description": "Description only"},
+        )
+        self.document.refresh_from_db()
+        self.assertEqual(self.document.description, "Description only")
+        self.assertEqual(self.document.name, "design.txt")
+        self.assertRedirects(response, self.document.get_absolute_url())
+
     def test_delete_document(self):
         self.client.force_login(self.owner)
         response = self.client.post(reverse("documents:document_delete", args=[self.document.pk]))

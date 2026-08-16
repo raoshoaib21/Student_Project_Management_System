@@ -12,7 +12,9 @@ class ProgressReport(models.Model):
     project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="progress_reports")
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="progress_reports",
     )
     week_number = models.PositiveIntegerField()
@@ -54,7 +56,9 @@ class Feedback(models.Model):
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="given_feedbacks",
     )
     content = models.TextField()
@@ -64,4 +68,9 @@ class Feedback(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Feedback by {self.author}"
+        return f"Feedback by {self.author or 'deleted user'}"
+
+    def save(self, *args, **kwargs):
+        if self.progress_report_id:
+            self.project = self.progress_report.project
+        super().save(*args, **kwargs)

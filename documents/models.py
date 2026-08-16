@@ -10,7 +10,9 @@ class Document(models.Model):
     project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="documents")
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="uploaded_documents",
     )
     file = models.FileField(upload_to=project_file_path)

@@ -12,11 +12,11 @@ from django.views.generic import CreateView, DeleteView, DetailView, FormView, L
 
 from core.models import Notification, log_activity
 from projects.models import Project
-from projects.permissions import is_project_manager, is_project_member, scoped_projects
+from projects.permissions import is_project_member, scoped_projects
 
 from .forms import FeedbackForm, ProgressReportForm
 from .models import Feedback, ProgressReport
-from .permissions import FeedbackPermissionMixin, ReportAccessMixin, can_give_feedback
+from .permissions import FeedbackPermissionMixin, ReportAccessMixin, ReportManageMixin, can_give_feedback
 
 User = get_user_model()
 
@@ -71,6 +71,11 @@ class ProgressReportCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, f"Week {self.object.week_number} report created.")
         return response
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.get_project()
+        return kwargs
+
     def get_success_url(self):
         return self.object.get_absolute_url()
 
@@ -93,7 +98,7 @@ class ProgressReportDetailView(ReportAccessMixin, DetailView):
         context["feedbacks"] = self.object.feedbacks.select_related("author")
         context["can_give_feedback"] = can_give_feedback(self.request.user, self.object)
         context["feedback_form"] = FeedbackForm() if context["can_give_feedback"] else None
-        context["can_edit"] = is_project_manager(self.request.user, self.object.project) or self.object.author_id == self.request.user.id
+        context["can_edit"] = self.request.user.id == self.object.author_id
         return context
 
     def post(self, request, *args, **kwargs):
@@ -109,12 +114,13 @@ class ProgressReportDetailView(ReportAccessMixin, DetailView):
             feedback.progress_report = self.object
             feedback.save()
             log_activity(request.user, "gave feedback", f"Week {self.object.week_number} of {self.object.project.title}")
-            Notification.objects.create(
-                user=self.object.author,
-                title="Feedback received",
-                message=f"{request.user} left feedback on your Week {self.object.week_number} report.",
-                url=self.object.get_absolute_url(),
-            )
+            if self.object.author_id:
+                Notification.objects.create(
+                    user=self.object.author,
+                    title="Feedback received",
+                    message=f"{request.user} left feedback on your Week {self.object.week_number} report.",
+                    url=self.object.get_absolute_url(),
+                )
             messages.success(request, "Feedback submitted.")
             return HttpResponseRedirect(self.object.get_absolute_url())
         context = self.get_context_data(object=self.object)
@@ -122,10 +128,15 @@ class ProgressReportDetailView(ReportAccessMixin, DetailView):
         return self.render_to_response(context)
 
 
-class ProgressReportUpdateView(ReportAccessMixin, UpdateView):
+class ProgressReportUpdateView(ReportManageMixin, UpdateView):
     model = ProgressReport
     form_class = ProgressReportForm
     template_name = "progress/report_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.object.project
+        return kwargs
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -144,7 +155,7 @@ class ProgressReportUpdateView(ReportAccessMixin, UpdateView):
         return context
 
 
-class ProgressReportDeleteView(ReportAccessMixin, DeleteView):
+class ProgressReportDeleteView(ReportManageMixin, DeleteView):
     model = ProgressReport
     template_name = "progress/report_confirm_delete.html"
 
@@ -162,10 +173,10 @@ class ProgressReportDeleteView(ReportAccessMixin, DeleteView):
 @login_required
 @require_POST
 def report_submit(request, pk):
-    """Author (or manager) moves a report from Draft to Submitted."""
+    """The report's author moves it from Draft to Submitted."""
     report = get_object_or_404(ProgressReport, pk=pk)
     user = request.user
-    if user.id != report.author_id and not is_project_manager(user, report.project):
+    if user.id != report.author_id:
         raise PermissionDenied
     if report.status == ProgressReport.Status.DRAFT:
         report.status = ProgressReport.Status.SUBMITTED
@@ -200,11 +211,12 @@ def report_review(request, pk):
             verb = "requested revision on"
         report.save(update_fields=["status", "updated_at"])
         log_activity(request.user, verb, str(report))
-        Notification.objects.create(
-            user=report.author,
-            title=f"Report {headline}",
-            message=f"Your Week {report.week_number} report was {headline} by {request.user}.",
-            url=report.get_absolute_url(),
-        )
+        if report.author_id:
+            Notification.objects.create(
+                user=report.author,
+                title=f"Report {headline}",
+                message=f"Your Week {report.week_number} report was {headline} by {request.user}.",
+                url=report.get_absolute_url(),
+            )
         messages.success(request, f"Report marked as {report.get_status_display()}.")
     return HttpResponseRedirect(report.get_absolute_url())

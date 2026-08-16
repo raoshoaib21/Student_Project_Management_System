@@ -32,10 +32,15 @@ class DocumentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["description"].label = "Description (optional)"
+        if self.instance.pk:
+            self.fields["file"].required = False
+            submit_label = "Update Document"
+        else:
+            submit_label = "Upload Document"
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.form_enctype = "multipart/form-data"
-        self.helper.add_input(Submit("submit", "Upload Document", css_class="btn btn-primary"))
+        self.helper.add_input(Submit("submit", submit_label, css_class="btn btn-primary"))
 
     def clean_file(self):
         file = self.cleaned_data.get("file")

@@ -13,12 +13,23 @@ def can_give_feedback(user, report):
 
 
 class ReportAccessMixin:
-    """Authors and project managers can access a progress report."""
+    """View access: the author and project managers can view a progress report."""
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         user = self.request.user
         if user.id != obj.author_id and not is_project_manager(user, obj.project):
+            raise PermissionDenied
+        return obj
+
+
+class ReportManageMixin:
+    """Edit/delete access: only the report's author can manage its content."""
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        user = self.request.user
+        if user.id != obj.author_id:
             raise PermissionDenied
         return obj
 

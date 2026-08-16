@@ -133,8 +133,55 @@ class ProgressReportViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_delete_report(self):
+    def test_update_allowed_for_author(self):
+        self.client.force_login(self.member)
+        response = self.client.post(
+            reverse("progress:report_update", args=[self.report.pk]),
+            {"week_number": 1, "summary": "Updated summary"},
+        )
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.summary, "Updated summary")
+        self.assertRedirects(response, self.report.get_absolute_url())
+
+    def test_update_denied_for_supervisor(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("progress:report_update", args=[self.report.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_update_denied_for_manager(self):
         self.client.force_login(self.owner)
+        response = self.client.get(reverse("progress:report_update", args=[self.report.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_update_denied_for_other_student(self):
+        self.client.force_login(self.outsider)
+        response = self.client.get(reverse("progress:report_update", args=[self.report.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_submit_denied_for_supervisor(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(reverse("progress:report_submit", args=[self.report.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, ProgressReport.Status.DRAFT)
+
+    def test_delete_denied_for_supervisor(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(reverse("progress:report_delete", args=[self.report.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(ProgressReport.objects.filter(pk=self.report.pk).exists())
+
+    def test_duplicate_week_rejected_by_form(self):
+        self.client.force_login(self.member)
+        response = self.client.post(
+            reverse("progress:report_create", args=[self.project.pk]),
+            {"week_number": 1, "summary": "Duplicate"},
+        )
+        self.assertEqual(ProgressReport.objects.filter(project=self.project, week_number=1).count(), 1)
+        self.assertContains(response, "already exists")
+
+    def test_delete_report(self):
+        self.client.force_login(self.member)
         response = self.client.post(reverse("progress:report_delete", args=[self.report.pk]))
         self.assertFalse(ProgressReport.objects.filter(pk=self.report.pk).exists())
         self.assertRedirects(response, reverse("progress:report_list"))

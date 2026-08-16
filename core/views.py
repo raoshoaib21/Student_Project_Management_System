@@ -2,12 +2,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
+from django.views.generic import FormView, TemplateView
 
 from projects.models import Task
 from projects.permissions import scoped_projects
 
+from .forms import ContactForm
 from .models import Notification
 
 
@@ -17,6 +19,21 @@ def health(request):
 
 class LandingView(TemplateView):
     template_name = "core/landing.html"
+
+
+class AboutView(TemplateView):
+    template_name = "core/about.html"
+
+
+class ContactView(FormView):
+    template_name = "core/contact.html"
+    form_class = ContactForm
+    success_url = reverse_lazy("core:contact")
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Thanks for reaching out — we'll get back to you soon.")
+        return super().form_valid(form)
 
 
 @login_required

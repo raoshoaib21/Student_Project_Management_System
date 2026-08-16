@@ -43,3 +43,18 @@ class ActivityLog(models.Model):
 
 def log_activity(user, action, target="", details=""):
     ActivityLog.objects.create(user=user, action=action, target=target, details=details)
+
+
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.subject} from {self.name}"

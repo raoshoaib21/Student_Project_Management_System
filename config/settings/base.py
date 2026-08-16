@@ -120,6 +120,8 @@ LOGIN_REQUIRED_IGNORE_PATHS = [
 ]
 LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
     "landing",
+    "about",
+    "contact",
 ]
 
 CRISPY_TEMPLATE_PACK = "bootstrap5"

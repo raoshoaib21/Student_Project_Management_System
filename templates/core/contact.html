@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Contact Us | Student PMS{% endblock %}
+{% block header %}{% include "partials/public_nav.html" %}{% endblock %}
+{% block content %}
+
+<section class="site-page-hero">
+    <div class="container text-center py-5">
+        <div class="hero-eyebrow">Contact Us</div>
+        <h1 class="site-page-title">We'd love to hear from you.</h1>
+        <p class="site-page-sub mx-auto">
+            Questions about the platform, a feature request, or feedback on your experience?
+            Send us a message and we'll get back to you.
+        </p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-6 reveal">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-envelope-paper me-2 text-primary"></i>Send a message</h5>
+                        {% crispy form %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 reveal">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">Other ways to reach us</h5>
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <div class="feature-icon" style="width:42px;height:42px;font-size:1.1rem;"><i class="bi bi-envelope"></i></div>
+                            <div>
+                                <div class="fw-semibold small text-muted">Email</div>
+                                <div class="small">support@studentpms.example.com</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <div class="feature-icon" style="width:42px;height:42px;font-size:1.1rem;"><i class="bi bi-clock"></i></div>
+                            <div>
+                                <div class="fw-semibold small text-muted">Response time</div>
+                                <div class="small">We reply within 1&ndash;2 working days.</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="feature-icon" style="width:42px;height:42px;font-size:1.1rem;"><i class="bi bi-shield-check"></i></div>
+                            <div>
+                                <div class="fw-semibold small text-muted">Account help</div>
+                                <div class="small">Use the in-app profile and password pages for account settings.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

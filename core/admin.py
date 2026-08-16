@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ActivityLog, Notification
+from .models import ActivityLog, ContactMessage, Notification
 
 
 @admin.register(Notification)
@@ -15,3 +15,10 @@ class ActivityLogAdmin(admin.ModelAdmin):
     list_display = ("action", "user", "target", "created_at")
     list_filter = ("created_at",)
     search_fields = ("action", "target", "user__username")
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ("subject", "name", "email", "is_read", "created_at")
+    list_filter = ("is_read", "created_at")
+    search_fields = ("name", "email", "subject", "message")

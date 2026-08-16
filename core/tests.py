@@ -80,6 +80,36 @@ class CoreViewTests(TestCase):
         self.assertContains(response, "Dashboard")
 
 
+class PublicSiteTests(TestCase):
+    def test_about_public(self):
+        response = self.client.get(reverse("core:about"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "About")
+
+    def test_contact_public(self):
+        response = self.client.get(reverse("core:contact"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Send a message")
+
+    def test_contact_form_saves_message(self):
+        from core.models import ContactMessage
+
+        response = self.client.post(
+            reverse("core:contact"),
+            {"name": "Ayesha", "email": "ayesha@example.com", "subject": "Hello", "message": "Great platform!"},
+        )
+        self.assertRedirects(response, reverse("core:contact"))
+        self.assertEqual(ContactMessage.objects.filter(email="ayesha@example.com").count(), 1)
+
+    def test_contact_form_validation(self):
+        response = self.client.post(
+            reverse("core:contact"),
+            {"name": "", "email": "not-an-email", "subject": "", "message": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required")
+
+
 class NotificationViewTests(TestCase):
     def setUp(self):
         self.student = User.objects.create_user(username="stu", email="stu@example.com", password="x")

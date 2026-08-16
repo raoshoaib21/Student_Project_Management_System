@@ -890,6 +890,199 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* ---------------------------------------------------------------------
+   Public website — nav, page heroes, sections, footer
+   --------------------------------------------------------------------- */
+
+.site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background: rgba(255, 255, 255, .86);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    padding: .55rem 0;
+}
+
+.site-nav .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.site-brand-text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--navy-800);
+    white-space: nowrap;
+}
+
+.site-nav .nav-link {
+    font-weight: 500;
+    color: var(--ink);
+    border-radius: 50rem;
+    padding: .45rem .9rem;
+    transition: color .15s ease, background-color .15s ease;
+}
+
+.site-nav .nav-link:hover {
+    color: var(--brand-700);
+    background-color: var(--brand-soft);
+}
+
+.site-nav .nav-link.active {
+    color: var(--brand-700);
+    background-color: var(--brand-soft);
+    font-weight: 600;
+}
+
+.site-page-hero {
+    background: linear-gradient(160deg, #eef3fb 0%, #f8fafd 100%);
+    border-bottom: 1px solid var(--border);
+}
+
+.site-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    color: var(--navy-800);
+}
+
+.site-page-sub {
+    max-width: 560px;
+    color: var(--muted);
+    font-size: 1.05rem;
+}
+
+.site-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--navy-800);
+}
+
+.site-section-alt {
+    background: linear-gradient(180deg, #fff 0%, #f4f6fb 100%);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.site-number {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto;
+    border-radius: 1rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--brand-700);
+    background: var(--brand-soft);
+    border: 1px solid #ffd9b3;
+}
+
+.cta-band {
+    background: linear-gradient(135deg, var(--navy-700) 0%, var(--navy-900) 70%, rgba(var(--brand-rgb), .45) 135%);
+    color: #fff;
+}
+
+.cta-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+}
+
+.cta-sub {
+    max-width: 520px;
+    color: rgba(255, 255, 255, .78);
+    font-size: 1.05rem;
+}
+
+.cta-band .btn-light {
+    background-color: #fff;
+    color: var(--ink);
+    border: none;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .25);
+}
+
+.cta-band .btn-light:hover {
+    background-color: var(--brand-soft);
+    color: var(--ink);
+}
+
+.cta-band .btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, .14);
+    color: #fff;
+    border-color: #fff;
+}
+
+.site-footer {
+    background: linear-gradient(180deg, var(--navy-900) 0%, #050a14 100%);
+    color: rgba(255, 255, 255, .72);
+}
+
+.site-footer .site-brand-text {
+    color: #fff;
+}
+
+.footer-heading {
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: .02em;
+    margin-bottom: 1rem;
+}
+
+.footer-text {
+    color: rgba(255, 255, 255, .6);
+    font-size: .92rem;
+    max-width: 320px;
+}
+
+.footer-links li {
+    margin-bottom: .55rem;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, .62);
+    text-decoration: none;
+    font-size: .92rem;
+    transition: color .15s ease;
+}
+
+.footer-links a:hover {
+    color: var(--brand-glow);
+}
+
+.footer-social {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    color: rgba(255, 255, 255, .72);
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.footer-social:hover {
+    background: var(--brand);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    font-size: .85rem;
+    color: rgba(255, 255, 255, .5);
+}
+
+/* ---------------------------------------------------------------------
    Responsive: collapse sidebar to icons
    --------------------------------------------------------------------- */
 

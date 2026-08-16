@@ -234,6 +234,12 @@ h1, h2, h3, h4, h5, h6 {
     cursor: not-allowed;
 }
 
+/* The sidebar is fixed, so the content column must reserve its width. */
+.main-wrapper {
+    margin-left: var(--sidebar-w);
+    width: calc(100% - var(--sidebar-w));
+}
+
 /* ---------------------------------------------------------------------
    Topbar
    --------------------------------------------------------------------- */
@@ -752,5 +758,6 @@ h1, h2, h3, h4, h5, h6 {
 
     .main-wrapper {
         margin-left: 64px;
+        width: calc(100% - 64px);
     }
 }

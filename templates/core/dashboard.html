@@ -3,13 +3,13 @@
 {% block content %}
 
 <section class="dashboard-hero mb-4 reveal">
-    <div class="d-flex flex-wrap align-items-center gap-4">
-        <div class="flex-grow-1" style="min-width: 240px;">
+    <div class="row align-items-center gap-4">
+        <div class="flex-grow-1" style="min-width:240px;">
             <div class="hero-eyebrow">Student Project Management System</div>
             <h1 class="hero-title">Welcome back, {{ user.get_full_name|default:user.username }}</h1>
             <p class="hero-subtitle">Signed in as <strong>{{ user.get_role_display }}</strong>. Here's how your projects are moving.</p>
         </div>
-        <div class="hero-progress flex-grow-1" style="min-width: 220px;">
+        <div class="hero-progress flex-grow-1" style="min-width:200px;">
             <div class="hero-progress-label">
                 <span>Overall completion</span>
                 <span class="mono">{% if total_tasks %}{% widthratio completed_tasks total_tasks 100 %}{% else %}0{% endif %}%</span>

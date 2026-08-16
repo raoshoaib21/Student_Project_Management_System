@@ -2,20 +2,19 @@
 <footer class="site-footer">
     <div class="container py-5">
         <div class="row g-4">
-            <div class="col-lg-4">
+            <div class="col-lg-5">
                 <a class="d-flex align-items-center gap-2 text-decoration-none mb-3" href="{% url 'core:landing' %}">
-                    <span class="brand-logo" style="width:36px;height:36px;font-size:1rem;"><i class="bi bi-kanban"></i></span>
+                    <span class="brand-logo" style="width:34px;height:34px;font-size:.95rem;border-radius:.7rem;"><i class="bi bi-kanban"></i></span>
                     <span class="site-brand-text">Student PMS</span>
                 </a>
                 <p class="footer-text">
                     A student project management system that brings projects, tasks,
                     documents and supervisor feedback together in one clear workspace.
                 </p>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 mt-3">
                     <a href="#" class="footer-social" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                     <a href="#" class="footer-social" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
                     <a href="#" class="footer-social" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-                    <a href="#" class="footer-social" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
                 </div>
             </div>
             <div class="col-6 col-lg-2">
@@ -23,34 +22,29 @@
                 <ul class="list-unstyled footer-links">
                     <li><a href="{% url 'core:landing' %}">Home</a></li>
                     <li><a href="{% url 'core:about' %}">About Us</a></li>
-                    <li><a href="{% url 'core:contact' %}">Contact Us</a></li>
+                    <li><a href="{% url 'core:contact' %}">Contact</a></li>
+                    <li><a href="{% url 'accounts:login' %}">Login</a></li>
                 </ul>
             </div>
-            <div class="col-6 col-lg-3">
-                <h6 class="footer-heading">Features</h6>
+            <div class="col-6 col-lg-2">
+                <h6 class="footer-heading">Product</h6>
                 <ul class="list-unstyled footer-links">
-                    <li><a href="{% url 'core:landing' %}#features">Project &amp; task management</a></li>
-                    <li><a href="{% url 'core:landing' %}#features">Document sharing</a></li>
-                    <li><a href="{% url 'core:landing' %}#features">Weekly progress reports</a></li>
-                    <li><a href="{% url 'core:landing' %}#features">Supervisor feedback</a></li>
+                    <li><a href="{% url 'core:landing' %}#features">Projects &amp; tasks</a></li>
+                    <li><a href="{% url 'core:landing' %}#features">Documents</a></li>
+                    <li><a href="{% url 'core:landing' %}#features">Weekly reports</a></li>
+                    <li><a href="{% url 'core:landing' %}#features">Feedback</a></li>
                 </ul>
             </div>
             <div class="col-lg-3">
                 <h6 class="footer-heading">Get started</h6>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'core:dashboard' %}" class="btn btn-primary w-100 mb-2">
-                        <i class="bi bi-speedometer2 me-1"></i>Go to Dashboard
-                    </a>
-                {% else %}
-                    <a href="{% url 'accounts:register' %}" class="btn btn-primary w-100 mb-2">Create account</a>
-                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary w-100">Login</a>
-                {% endif %}
+                <p class="footer-text">Create your first project in under a minute. Free for students and supervisors.</p>
+                <a href="{% url 'accounts:register' %}" class="footer-link-cta">Create account →</a>
             </div>
         </div>
     </div>
     <div class="footer-bottom">
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 py-3">
-            <span>&copy; {% now "Y" %} Student Project Management System. All rights reserved.</span>
+            <span>&copy; {% now "Y" %} Student Project Management System</span>
             <span>Built for students and supervisors.</span>
         </div>
     </div>

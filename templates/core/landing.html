@@ -2,44 +2,53 @@
 {% block title %}Home | Student PMS{% endblock %}
 {% block header %}{% include "partials/public_nav.html" %}{% endblock %}
 {% block content %}
+
 <section class="landing-hero">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-7">
-                <div class="hero-eyebrow mb-3">Student Project Management System</div>
-                <h1 class="display-4 fw-bold mb-3">Manage your final-year <em class="fst-normal" style="color:#ffb25e;">projects</em>, tasks and supervision.</h1>
+            <div class="col-lg-6">
+                <div class="hero-badge">Open-source project management for academia</div>
+                <h1 class="fw-bold mb-3">Plan, build, and complete your final-year project with confidence.</h1>
                 <p class="lead mb-4">
-                    A student project management system to create projects, assign tasks,
-                    upload documents, submit weekly progress reports and receive supervisor feedback —
-                    all in one place.
+                    A focused workspace for students and supervisors — projects, tasks,
+                    documents, weekly reports and feedback in one clear place.
                 </p>
-                <div class="hero-cta d-flex flex-wrap gap-2">
+                <div class="hero-cta d-flex align-items-center gap-3">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'core:dashboard' %}" class="btn btn-light btn-lg fw-semibold">
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-primary btn-lg">
                             <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
                         </a>
                     {% else %}
-                        <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg fw-semibold me-2">
-                            <i class="bi bi-person-plus me-2"></i>Register as Student
-                        </a>
-                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-lg fw-semibold">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
-                        </a>
+                        <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg">Get started for free</a>
+                        <a href="{% url 'core:about' %}" class="hero-text-link">Learn more →</a>
                     {% endif %}
                 </div>
             </div>
-            <div class="col-lg-5 d-none d-lg-block">
-                <div class="card hero-card">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-3">Core features</h5>
-                        <ul class="list-unstyled mb-0">
-                            <li class="mb-2"><i class="bi bi-folder2-open me-2"></i>Project &amp; task management</li>
-                            <li class="mb-2"><i class="bi bi-people me-2"></i>Team collaboration with roles</li>
-                            <li class="mb-2"><i class="bi bi-file-earmark-arrow-up me-2"></i>Document uploads &amp; downloads</li>
-                            <li class="mb-2"><i class="bi bi-clipboard-check me-2"></i>Weekly progress reports</li>
-                            <li class="mb-2"><i class="bi bi-chat-square-text me-2"></i>Supervisor feedback</li>
-                            <li class="mb-2"><i class="bi bi-bell me-2"></i>Notifications &amp; activity logs</li>
-                        </ul>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-visual">
+                    <div class="hv-card">
+                        <div class="hv-card-icon" style="background:var(--brand);"><i class="bi bi-folder2-open"></i></div>
+                        <div class="hv-card-title">Health Tracker</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="hv-card-stat">12</span>
+                            <span class="hv-card-sub">tasks in progress</span>
+                        </div>
+                    </div>
+                    <div class="hv-card">
+                        <div class="hv-card-icon" style="background:var(--secondary);"><i class="bi bi-clipboard-check"></i></div>
+                        <div class="hv-card-title">Week 8 Report</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge" style="background:var(--accent);color:#fff;">Submitted</span>
+                            <span class="hv-card-sub">awaiting review</span>
+                        </div>
+                    </div>
+                    <div class="hv-card">
+                        <div class="hv-card-icon" style="background:#F43F5E;"><i class="bi bi-file-earmark-text"></i></div>
+                        <div class="hv-card-title">Design Document</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="hv-card-stat">3.2 MB</span>
+                            <span class="hv-card-sub">uploaded today</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -50,34 +59,34 @@
 <section id="features" class="py-5">
     <div class="container">
         <div class="text-center mb-5 reveal">
-            <div class="hero-eyebrow text-uppercase text-muted">Why Student PMS</div>
             <h2 class="site-section-title">Everything a project needs, in one place</h2>
+            <p class="text-muted mx-auto" style="max-width:500px;">Built for the real workflow of final-year projects — not a generic task tracker repurposed for academia.</p>
         </div>
         <div class="row g-4">
             <div class="col-md-4 reveal">
                 <div class="card feature-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center p-4">
-                        <div class="feature-icon mb-3"><i class="bi bi-person-badge"></i></div>
-                        <h5 class="fw-bold mt-2">Student</h5>
-                        <p class="text-muted mb-0">Create projects, assign tasks, upload documents and submit weekly progress reports for review.</p>
+                        <div class="feature-icon brand"><i class="bi bi-folder2-open"></i></div>
+                        <h5 class="fw-bold">Projects &amp; tasks</h5>
+                        <p class="text-muted mb-0">Create projects, invite teammates, and track every task with statuses and priorities.</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-4 reveal">
                 <div class="card feature-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center p-4">
-                        <div class="feature-icon mb-3"><i class="bi bi-person-workspace"></i></div>
-                        <h5 class="fw-bold mt-2">Supervisor</h5>
-                        <p class="text-muted mb-0">Monitor student projects, review progress reports and provide timely feedback.</p>
+                        <div class="feature-icon teal"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                        <h5 class="fw-bold">Documents &amp; reports</h5>
+                        <p class="text-muted mb-0">Upload proposals and designs, then submit weekly progress reports for supervisor review.</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-4 reveal">
                 <div class="card feature-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center p-4">
-                        <div class="feature-icon mb-3"><i class="bi bi-shield-check"></i></div>
-                        <h5 class="fw-bold mt-2">Secure</h5>
-                        <p class="text-muted mb-0">Email verification, password reset, brute-force protection and role-based access control.</p>
+                        <div class="feature-icon amber"><i class="bi bi-chat-square-text"></i></div>
+                        <h5 class="fw-bold">Supervisor feedback</h5>
+                        <p class="text-muted mb-0">Supervisors approve reports, request changes, and leave guidance directly in context.</p>
                     </div>
                 </div>
             </div>
@@ -85,52 +94,68 @@
     </div>
 </section>
 
-<section class="site-section-alt py-5">
+<section class="py-5 site-section-alt">
     <div class="container">
         <div class="text-center mb-5 reveal">
-            <div class="hero-eyebrow text-uppercase text-muted">How it works</div>
-            <h2 class="site-section-title">From idea to submission, week by week</h2>
+            <h2 class="site-section-title">From idea to submission</h2>
+            <p class="text-muted mx-auto" style="max-width:440px;">Five steps that mirror how final-year projects actually run.</p>
         </div>
-        <div class="row g-4">
-            <div class="col-md-4 reveal">
-                <div class="text-center">
-                    <div class="site-number mono">01</div>
-                    <h5 class="fw-bold mt-2">Create your project</h5>
-                    <p class="text-muted mb-0">Set up the project, add your supervisor and invite teammates, then break the work into tasks.</p>
+        <div class="timeline-steps reveal">
+            <div class="step-item">
+                <div class="step-dot">01</div>
+                <div class="step-body">
+                    <div class="step-title">Plan</div>
+                    <div class="step-desc">Define scope, add your supervisor, and set up the project.</div>
                 </div>
             </div>
-            <div class="col-md-4 reveal">
-                <div class="text-center">
-                    <div class="site-number mono">02</div>
-                    <h5 class="fw-bold mt-2">Track and share</h5>
-                    <p class="text-muted mb-0">Update task statuses, upload documents, and keep everything your team needs in one place.</p>
+            <div class="step-item">
+                <div class="step-dot">02</div>
+                <div class="step-body">
+                    <div class="step-title">Build</div>
+                    <div class="step-desc">Create tasks, assign work, and upload documents as you go.</div>
                 </div>
             </div>
-            <div class="col-md-4 reveal">
-                <div class="text-center">
-                    <div class="site-number mono">03</div>
-                    <h5 class="fw-bold mt-2">Submit and improve</h5>
-                    <p class="text-muted mb-0">Send weekly progress reports, get supervisor feedback, and keep iterating until it's done.</p>
+            <div class="step-item">
+                <div class="step-dot">03</div>
+                <div class="step-body">
+                    <div class="step-title">Report</div>
+                    <div class="step-desc">Submit weekly progress summaries your supervisor can review.</div>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-dot">04</div>
+                <div class="step-body">
+                    <div class="step-title">Review</div>
+                    <div class="step-desc">Get feedback, revise, and keep iterating each week.</div>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-dot" style="border-color:var(--secondary);color:var(--secondary);box-shadow:0 0 0 6px rgba(var(--secondary-rgb),.08);">05</div>
+                <div class="step-body">
+                    <div class="step-title">Done</div>
+                    <div class="step-desc">Complete all tasks, get final approval, and ship your project.</div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="cta-band py-5">
-    <div class="container text-center py-3">
-        <h2 class="cta-title">Ready to get organised?</h2>
-        <p class="cta-sub mx-auto">Start your project today and keep your supervisor in the loop, every week.</p>
-        {% if user.is_authenticated %}
-            <a href="{% url 'core:dashboard' %}" class="btn btn-light btn-lg fw-semibold">
-                <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
-            </a>
-        {% else %}
-            <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg fw-semibold me-2">
-                <i class="bi bi-person-plus me-2"></i>Register as Student
-            </a>
-            <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-lg fw-semibold">Login</a>
-        {% endif %}
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4 text-center reveal">
+            <div class="col-md-4">
+                <div class="hv-card-stat mb-1" style="color:var(--brand);font-size:2.2rem;">Projects</div>
+                <p class="text-muted mb-0">Organised, supervised, on track.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="hv-card-stat mb-1" style="color:var(--secondary);font-size:2.2rem;">Weekly reports</div>
+                <p class="text-muted mb-0">Submitted, reviewed, iterated.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="hv-card-stat mb-1" style="color:#F43F5E;font-size:2.2rem;">One workspace</div>
+                <p class="text-muted mb-0">Everything your team needs, in context.</p>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

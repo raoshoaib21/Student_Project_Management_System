@@ -5,6 +5,17 @@
             <span class="brand-logo" style="width:34px;height:34px;font-size:.95rem;"><i class="bi bi-kanban"></i></span>
             Student PMS
         </span>
+        <div class="topbar-title d-none d-lg-block me-3">
+            {% if active_page == 'dashboard' %}Dashboard
+            {% elif active_page == 'projects' %}Projects
+            {% elif active_page == 'tasks' %}Tasks
+            {% elif active_page == 'documents' %}Documents
+            {% elif active_page == 'progress' %}Progress Reports
+            {% elif active_page == 'notifications' %}Notifications
+            {% elif active_page == 'activity_log' %}Activity Log
+            {% elif active_page == 'profile' %}Profile
+            {% endif %}
+        </div>
         <form class="d-none d-lg-flex me-auto" role="search">
             <div class="input-group input-group-sm w-auto">
                 <input type="search" class="form-control search-input" placeholder="Search projects, tasks..." aria-label="Search">

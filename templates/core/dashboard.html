@@ -2,15 +2,32 @@
 {% block title %}Dashboard | Student PMS{% endblock %}
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-                    <h4 class="fw-bold mb-0">Welcome, {{ user.get_full_name|default:user.username }}!</h4>
-                    <span class="text-muted">You are signed in as <strong>{{ user.get_role_display }}</strong>.</span>
-                </div>
-                <a href="{% url 'projects:project_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i>New Project
-                </a>
-</div>
+<section class="dashboard-hero mb-4 reveal">
+    <div class="d-flex flex-wrap align-items-center gap-4">
+        <div class="flex-grow-1" style="min-width: 240px;">
+            <div class="hero-eyebrow">Student Project Management System</div>
+            <h1 class="hero-title">Welcome back, {{ user.get_full_name|default:user.username }}</h1>
+            <p class="hero-subtitle">Signed in as <strong>{{ user.get_role_display }}</strong>. Here's how your projects are moving.</p>
+        </div>
+        <div class="hero-progress flex-grow-1" style="min-width: 220px;">
+            <div class="hero-progress-label">
+                <span>Overall completion</span>
+                <span class="mono">{% if total_tasks %}{% widthratio completed_tasks total_tasks 100 %}{% else %}0{% endif %}%</span>
+            </div>
+            <div class="progress hero-progress-track" role="progressbar"
+                 aria-valuenow="{% if total_tasks %}{% widthratio completed_tasks total_tasks 100 %}{% else %}0{% endif %}"
+                 aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width: {% if total_tasks %}{% widthratio completed_tasks total_tasks 100 %}{% else %}0{% endif %}%"></div>
+            </div>
+            <div class="hero-progress-label mt-2">
+                <span class="small">{{ completed_tasks }} of {{ total_tasks }} tasks done</span>
+            </div>
+        </div>
+        <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg flex-shrink-0">
+            <i class="bi bi-plus-lg me-1"></i>New Project
+        </a>
+    </div>
+</section>
 
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-lg-3 reveal">

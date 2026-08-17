@@ -384,14 +384,13 @@ h1, h2, h3, h4, h5, h6,
 
 /* Content column offset */
 .main-wrapper {
-    margin-left: calc(var(--sidebar-expanded) + 16px + 16px);
-    width: calc(100% - var(--sidebar-expanded) - 32px);
-    transition: margin-left .28s cubic-bezier(.4, 0, .2, 1), width .28s cubic-bezier(.4, 0, .2, 1);
+    margin-left: calc(var(--sidebar-expanded) + 32px);
+    overflow-x: hidden;
+    transition: margin-left .28s cubic-bezier(.4, 0, .2, 1);
 }
 
 .sidebar-collapsed .main-wrapper {
-    margin-left: calc(var(--sidebar-collapsed) + 16px + 16px);
-    width: calc(100% - var(--sidebar-collapsed) - 32px);
+    margin-left: calc(var(--sidebar-collapsed) + 32px);
 }
 
 /* ---------------------------------------------------------------------
@@ -1017,8 +1016,7 @@ h1, h2, h3, h4, h5, h6,
     .sidebar-user { justify-content: center; padding: .5rem; }
     .sidebar-section-label { text-align: center; padding: .75rem .2rem .3rem; }
     .main-wrapper {
-        margin-left: calc(var(--sidebar-collapsed) + 16px + 16px);
-        width: calc(100% - var(--sidebar-collapsed) - 32px);
+        margin-left: calc(var(--sidebar-collapsed) + 32px);
     }
     .sidebar-toggle { display: none; }
 }

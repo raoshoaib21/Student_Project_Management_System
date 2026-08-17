@@ -1,8 +1,42 @@
-/* Student PMS — UI interactions (ripple buttons + scroll reveal) */
+/* Student PMS — UI interactions */
 (function () {
     "use strict";
 
     document.addEventListener("DOMContentLoaded", function () {
+
+        /* ---- Sidebar collapse toggle ---- */
+        var sidebar = document.getElementById("appSidebar");
+        var toggle = document.getElementById("sidebarToggle");
+        var body = document.body;
+        if (sidebar && toggle) {
+            if (localStorage.getItem("sidebar-collapsed") === "true") {
+                body.classList.add("sidebar-collapsed");
+            }
+            toggle.addEventListener("click", function () {
+                body.classList.toggle("sidebar-collapsed");
+                localStorage.setItem("sidebar-collapsed", body.classList.contains("sidebar-collapsed"));
+                var tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                tooltips.forEach(function (el) {
+                    var instance = bootstrap.Tooltip.getInstance(el);
+                    if (instance) instance.dispose();
+                });
+                if (body.classList.contains("sidebar-collapsed")) {
+                    initTooltips();
+                }
+            });
+        }
+
+        function initTooltips() {
+            if (!body.classList.contains("sidebar-collapsed")) return;
+            var els = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            els.forEach(function (el) {
+                if (!bootstrap.Tooltip.getInstance(el)) {
+                    new bootstrap.Tooltip(el, { trigger: "hover", delay: { show: 400, hide: 100 } });
+                }
+            });
+        }
+        initTooltips();
+
         /* ---- Button ripple effect ---- */
         var buttons = document.querySelectorAll(".btn:not(.btn-link)");
         for (var i = 0; i < buttons.length; i++) {

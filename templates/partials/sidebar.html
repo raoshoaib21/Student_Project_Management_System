@@ -1,67 +1,84 @@
 {% load static %}
-<aside class="sidebar d-flex flex-column flex-shrink-0 text-white">
-    <a href="{% url 'core:dashboard' %}" class="sidebar-brand">
-        <span class="brand-logo"><i class="bi bi-kanban"></i></span>
-        <span class="sidebar-brand-text">Student PMS</span>
-    </a>
+<aside class="sidebar" id="appSidebar">
+    <div class="sidebar-header">
+        <a href="{% url 'core:dashboard' %}" class="sidebar-brand">
+            <img src="{% static 'images/logo.png' %}" alt="Student PMS" class="sidebar-logo">
+            <span class="sidebar-brand-text">Student PMS</span>
+        </a>
+        <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" aria-label="Toggle sidebar">
+            <i class="bi bi-chevron-left toggle-icon"></i>
+        </button>
+    </div>
 
-    <div class="sidebar-section-label">Main</div>
-    <ul class="nav nav-pills flex-column gap-1">
-        <li class="nav-item">
-            <a href="{% url 'core:dashboard' %}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
-                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'projects:project_list' %}" class="nav-link {% if active_page == 'projects' %}active{% endif %}">
-                <i class="bi bi-folder2-open"></i><span>Projects</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'projects:task_list' %}" class="nav-link {% if active_page == 'tasks' %}active{% endif %}">
-                <i class="bi bi-list-check"></i><span>Tasks</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'documents:document_list' %}" class="nav-link {% if active_page == 'documents' %}active{% endif %}">
-                <i class="bi bi-file-earmark-text"></i><span>Documents</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'progress:report_list' %}" class="nav-link {% if active_page == 'progress' %}active{% endif %}">
-                <i class="bi bi-clipboard-check"></i><span>Progress Reports</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'core:notification_list' %}" class="nav-link {% if active_page == 'notifications' %}active{% endif %}">
-                <i class="bi bi-bell"></i><span>Notifications</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'core:activity_log' %}" class="nav-link {% if active_page == 'activity_log' %}active{% endif %}">
-                <i class="bi bi-clock-history"></i><span>Activity Log</span>
-            </a>
-        </li>
-    </ul>
-
-    <div class="sidebar-section-label">Account</div>
-    <ul class="nav nav-pills flex-column gap-1">
-        <li class="nav-item">
-            <a href="{% url 'accounts:profile' %}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
-                <i class="bi bi-person"></i><span>Profile</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'accounts:password_change' %}" class="nav-link">
-                <i class="bi bi-shield-lock"></i><span>Change Password</span>
-            </a>
-        </li>
-        {% if user.is_staff %}
+    <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Main</div>
+        <ul class="nav flex-column gap-1">
             <li class="nav-item">
-                <a href="{% url 'admin:index' %}" class="nav-link">
-                    <i class="bi bi-gear"></i><span>Admin</span>
+                <a href="{% url 'core:dashboard' %}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+                    <i class="bi bi-grid-1x2"></i><span class="nav-label">Dashboard</span>
                 </a>
             </li>
-        {% endif %}
-    </ul>
+            <li class="nav-item">
+                <a href="{% url 'projects:project_list' %}" class="nav-link {% if active_page == 'projects' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Projects">
+                    <i class="bi bi-folder2"></i><span class="nav-label">Projects</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'projects:task_list' %}" class="nav-link {% if active_page == 'tasks' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Tasks">
+                    <i class="bi bi-check2-square"></i><span class="nav-label">Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'documents:document_list' %}" class="nav-link {% if active_page == 'documents' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Documents">
+                    <i class="bi bi-files"></i><span class="nav-label">Documents</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'progress:report_list' %}" class="nav-link {% if active_page == 'progress' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Progress Reports">
+                    <i class="bi bi-graph-up-arrow"></i><span class="nav-label">Reports</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-section-label mt-3">System</div>
+        <ul class="nav flex-column gap-1">
+            <li class="nav-item">
+                <a href="{% url 'core:notification_list' %}" class="nav-link {% if active_page == 'notifications' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Notifications">
+                    <i class="bi bi-bell"></i><span class="nav-label">Notifications</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'core:activity_log' %}" class="nav-link {% if active_page == 'activity_log' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Activity Log">
+                    <i class="bi bi-clock-history"></i><span class="nav-label">Activity Log</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-section-label">Account</div>
+        <ul class="nav flex-column gap-1">
+            <li class="nav-item">
+                <a href="{% url 'accounts:profile' %}" class="nav-link {% if active_page == 'profile' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Profile">
+                    <i class="bi bi-person-circle"></i><span class="nav-label">Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'accounts:password_change' %}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Change Password">
+                    <i class="bi bi-shield-lock"></i><span class="nav-label">Password</span>
+                </a>
+            </li>
+            {% if user.is_staff %}
+                <li class="nav-item">
+                    <a href="{% url 'admin:index' %}" class="nav-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Admin Panel">
+                        <i class="bi bi-sliders"></i><span class="nav-label">Admin</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+        <div class="sidebar-user mt-2">
+            <div class="sidebar-user-avatar">{{ user.first_name|default:user.username|slice:":1"|upper }}</div>
+            <span class="nav-label sidebar-user-name">{{ user.get_full_name|default:user.username }}</span>
+        </div>
+    </div>
 </aside>

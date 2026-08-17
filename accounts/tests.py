@@ -10,7 +10,7 @@ User = get_user_model()
 
 
 class RegistrationFlowTests(TestCase):
-    def test_registration_creates_inactive_student_and_sends_email(self):
+    def test_registration_creates_active_student_and_redirects_to_dashboard(self):
         response = self.client.post(
             reverse("accounts:register"),
             {
@@ -24,13 +24,13 @@ class RegistrationFlowTests(TestCase):
                 "password2": "StrongPass123!",
             },
         )
-        self.assertRedirects(response, reverse("accounts:register_done"))
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertRedirects(response, reverse("core:dashboard"))
         user = User.objects.get(username="newstudent")
         self.assertEqual(user.role, User.Role.STUDENT)
-        self.assertFalse(user.is_active)
-        self.assertFalse(user.is_email_verified)
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_email_verified)
         self.assertTrue(StudentProfile.objects.filter(user=user).exists())
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
 
     def test_verify_email_activates_user(self):
         user = User.objects.create_user(username="s", email="s@example.com", password="x")

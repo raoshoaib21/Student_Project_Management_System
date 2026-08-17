@@ -35,8 +35,8 @@ class RegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.role = User.Role.STUDENT
-        user.is_active = False
-        user.is_email_verified = False
+        user.is_active = True
+        user.is_email_verified = True
         if commit:
             user.save()
             StudentProfile.objects.create(

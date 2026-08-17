@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Check your email | Student PMS{% endblock %}
+{% block title %}Account created | Student PMS{% endblock %}
+{% block body_class %}auth-body{% endblock %}
 {% block content %}
-<div class="container" style="max-width: 520px;">
-    <div class="card border-0 shadow-sm mt-5">
+<div class="container py-5" style="max-width: 520px;">
+    <div class="card auth-card">
         <div class="card-body p-5 text-center">
-            <i class="bi bi-envelope-check fs-1 text-success"></i>
-            <h4 class="fw-bold mt-3">Verification email sent</h4>
+            <span class="auth-brand"><i class="bi bi-check-lg"></i></span>
+            <h4 class="fw-bold mt-3">Account created</h4>
             <p class="text-muted">
-                We've sent a verification link to your email address.
-                Click the link to activate your account, then you can sign in.
+                Your account has been created successfully. You can now sign in and start using the platform.
             </p>
-            <a href="{% url 'accounts:login' %}" class="btn btn-primary">Go to Login</a>
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary">Sign in</a>
         </div>
     </div>
 </div>

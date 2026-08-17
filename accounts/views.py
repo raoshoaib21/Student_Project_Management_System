@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.core.mail.backends.console import EmailBackend as ConsoleEmailBackend
 from django.core.mail.message import EmailMessage
@@ -32,25 +33,10 @@ class RegisterView(FormView):
 
     def form_valid(self, form):
         user = form.save()
-        token = generate_email_token(user)
-        link = self.request.build_absolute_uri(reverse("accounts:verify_email", args=[token]))
-        subject = "Verify your email address"
-        body = (
-            f"Hi {user.username},\n\n"
-            "Thanks for registering with Student Project Management System.\n"
-            "Please verify your email address by clicking the link below:\n"
-            f"{link}\n\n"
-            f"This link expires in {EMAIL_TOKEN_MAX_AGE // 3600} hours.\n"
-            "If you did not register, you can safely ignore this email."
-        )
-        message = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
-        try:
-            message.send()
-        except Exception:
-            logger.exception("Failed to send verification email to %s; falling back to console", user.email)
-            ConsoleEmailBackend().send_messages([message])
+        auth_login(self.request, user, backend="django.contrib.auth.backends.ModelBackend")
         log_activity(user, "registered an account")
-        return redirect("accounts:register_done")
+        messages.success(self.request, f"Welcome, {user.first_name or user.username}! Your account has been created.")
+        return redirect("core:dashboard")
 
 
 class RegisterDoneView(TemplateView):

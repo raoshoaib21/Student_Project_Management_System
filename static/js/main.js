@@ -4,38 +4,33 @@
 
     document.addEventListener("DOMContentLoaded", function () {
 
-        /* ---- Sidebar collapse toggle ---- */
+        /* ---- Sidebar drawer toggle ---- */
         var sidebar = document.getElementById("appSidebar");
-        var toggle = document.getElementById("sidebarToggle");
-        var body = document.body;
-        if (sidebar && toggle) {
-            if (localStorage.getItem("sidebar-collapsed") === "true") {
-                body.classList.add("sidebar-collapsed");
-            }
-            toggle.addEventListener("click", function () {
-                body.classList.toggle("sidebar-collapsed");
-                localStorage.setItem("sidebar-collapsed", body.classList.contains("sidebar-collapsed"));
-                var tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-                tooltips.forEach(function (el) {
-                    var instance = bootstrap.Tooltip.getInstance(el);
-                    if (instance) instance.dispose();
-                });
-                if (body.classList.contains("sidebar-collapsed")) {
-                    initTooltips();
-                }
-            });
+        var backdrop = document.getElementById("sidebarBackdrop");
+        var toggleBtn = document.getElementById("sidebarToggle");
+        var closeBtn = document.getElementById("sidebarClose");
+
+        function openSidebar() {
+            if (sidebar) sidebar.classList.add("open");
+            if (backdrop) backdrop.classList.add("open");
+            document.body.style.overflow = "hidden";
         }
 
-        function initTooltips() {
-            if (!body.classList.contains("sidebar-collapsed")) return;
-            var els = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            els.forEach(function (el) {
-                if (!bootstrap.Tooltip.getInstance(el)) {
-                    new bootstrap.Tooltip(el, { trigger: "hover", delay: { show: 400, hide: 100 } });
-                }
-            });
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.remove("open");
+            if (backdrop) backdrop.classList.remove("open");
+            document.body.style.overflow = "";
         }
-        initTooltips();
+
+        if (toggleBtn) toggleBtn.addEventListener("click", openSidebar);
+        if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
+        if (backdrop) backdrop.addEventListener("click", closeSidebar);
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && sidebar && sidebar.classList.contains("open")) {
+                closeSidebar();
+            }
+        });
 
         /* ---- Button ripple effect ---- */
         var buttons = document.querySelectorAll(".btn:not(.btn-link)");

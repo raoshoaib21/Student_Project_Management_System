@@ -10,9 +10,10 @@ User = get_user_model()
 
 
 class RegistrationFlowTests(TestCase):
-    def test_registration_creates_active_student_and_redirects_to_dashboard(self):
+    def test_registration_disabled(self):
+        """Public registration is removed; the endpoint must not exist."""
         response = self.client.post(
-            reverse("accounts:register"),
+            "/accounts/register/",
             {
                 "username": "newstudent",
                 "email": "new@example.com",
@@ -24,13 +25,8 @@ class RegistrationFlowTests(TestCase):
                 "password2": "StrongPass123!",
             },
         )
-        self.assertRedirects(response, reverse("core:dashboard"))
-        user = User.objects.get(username="newstudent")
-        self.assertEqual(user.role, User.Role.STUDENT)
-        self.assertTrue(user.is_active)
-        self.assertTrue(user.is_email_verified)
-        self.assertTrue(StudentProfile.objects.filter(user=user).exists())
-        self.assertTrue(response.wsgi_request.user.is_authenticated)
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(User.objects.filter(username="newstudent").exists())
 
     def test_verify_email_activates_user(self):
         user = User.objects.create_user(username="s", email="s@example.com", password="x")
@@ -51,17 +47,9 @@ class RegistrationFlowTests(TestCase):
 
     def test_registration_requires_unique_email(self):
         User.objects.create_user(username="existing", email="dup@example.com", password="x")
-        response = self.client.post(
-            reverse("accounts:register"),
-            {
-                "username": "other",
-                "email": "dup@example.com",
-                "password1": "StrongPass123!",
-                "password2": "StrongPass123!",
-            },
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "already exists")
+        response = self.client.get("/accounts/register/")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(User.objects.filter(username="existing").exists())
 
 
 class LoginTests(TestCase):

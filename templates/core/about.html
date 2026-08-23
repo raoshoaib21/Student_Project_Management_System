@@ -105,10 +105,7 @@
                 <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
             </a>
         {% else %}
-            <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg fw-semibold me-2">
-                <i class="bi bi-person-plus me-2"></i>Register as Student
-            </a>
-            <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-lg fw-semibold">Login</a>
+            <a href="{% url 'accounts:login' %}" class="btn btn-light btn-lg fw-semibold">Sign in</a>
         {% endif %}
     </div>
 </section>

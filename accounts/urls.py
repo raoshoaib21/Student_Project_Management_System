@@ -12,7 +12,6 @@ from . import views
 app_name = "accounts"
 
 urlpatterns = [
-    path("register/", views.RegisterView.as_view(), name="register"),
     path("register/done/", views.RegisterDoneView.as_view(), name="register_done"),
     path("verify-email/<str:token>/", views.VerifyEmailView.as_view(), name="verify_email"),
     path("login/", views.CustomLoginView.as_view(), name="login"),

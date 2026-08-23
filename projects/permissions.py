@@ -11,6 +11,11 @@ def is_project_manager(user, project):
     return bool(user.is_authenticated and (project.owner_id == user.id or project.supervisor_id == user.id))
 
 
+def is_project_supervisor(user, project):
+    """Strictly the assigned supervisor — approval and grading decisions."""
+    return bool(user.is_authenticated and user.role == "SUPERVISOR" and project.supervisor_id == user.id)
+
+
 def is_project_leader(user, project):
     """User is a Leader member of the project."""
     return bool(user.is_authenticated and project.members.filter(user=user, role="LEADER").exists())

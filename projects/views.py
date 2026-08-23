@@ -7,12 +7,20 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, UpdateView
 
+from accounts.permissions import RoleRequiredMixin
 from core.models import Notification, log_activity
 
-from .forms import ProjectForm, ProjectMemberForm, TaskForm
+from .forms import (
+    ProjectDecisionForm,
+    ProjectForm,
+    ProjectGradeForm,
+    ProjectMemberForm,
+    TaskForm,
+)
 from .models import Project, ProjectMember, Task
 from .permissions import (
     ProjectManageAccessMixin,
@@ -20,6 +28,7 @@ from .permissions import (
     TaskAccessMixin,
     is_project_manager,
     is_project_member,
+    is_project_supervisor,
     scoped_projects,
 )
 
@@ -61,7 +70,10 @@ class ProjectListView(LoginRequiredMixin,ListView):
         return context
 
 
-class ProjectCreateView(LoginRequiredMixin,CreateView):
+class ProjectCreateView(RoleRequiredMixin, CreateView):
+    """Projects are assigned by supervisors; students cannot self-create."""
+
+    roles = (User.Role.SUPERVISOR,)
     model = Project
     form_class = ProjectForm
     template_name = "projects/project_form.html"
@@ -69,10 +81,6 @@ class ProjectCreateView(LoginRequiredMixin,CreateView):
     def form_valid(self, form):
         form.instance.owner = self.request.user
         response = super().form_valid(form)
-        if self.request.user.is_student:
-            ProjectMember.objects.get_or_create(
-                project=self.object, user=self.request.user, defaults={"role": ProjectMember.Role.LEADER}
-            )
         log_activity(self.request.user, "created project", self.object.title)
         _notify(
             self.object.supervisor,
@@ -104,6 +112,9 @@ class ProjectDetailView(LoginRequiredMixin,ProjectViewAccessMixin, DetailView):
         context["members"] = self.object.members.select_related("user")
         context["tasks"] = self.object.tasks.select_related("assignee").order_by("status", _task_priority_order())
         context["is_manager"] = is_project_manager(self.request.user, self.object)
+        context["is_assigned_supervisor"] = is_project_supervisor(self.request.user, self.object)
+        context["decision_form"] = ProjectDecisionForm()
+        context["grade_form"] = ProjectGradeForm(instance=self.object)
         context["task_status_choices"] = Task.Status.choices
         context["documents"] = self.object.documents.select_related("uploaded_by")[:5]
         context["documents_count"] = self.object.documents.count()
@@ -332,3 +343,67 @@ def task_status(request, pk):
         log_activity(request.user, "changed task status", task.title, f"{old_status} -> {task.get_status_display()}")
         messages.success(request, f"Task '{task.title}' moved to {task.get_status_display()}.")
     return HttpResponseRedirect(reverse("projects:project_detail", args=[task.project_id]))
+
+
+def _notify_project_circle(project, title, message):
+    """Notify the owner and every member of the project."""
+    recipient_ids = set(project.members.values_list("user_id", flat=True))
+    recipient_ids.add(project.owner_id)
+    for user_id in recipient_ids:
+        Notification.objects.create(user_id=user_id, title=title, message=message, url=project.get_absolute_url())
+
+
+@login_required
+@require_POST
+def project_decide(request, pk):
+    """Supervisor approves or declines a project against the requirements."""
+    project = get_object_or_404(Project, pk=pk)
+    if not is_project_supervisor(request.user, project):
+        raise PermissionDenied
+    form = ProjectDecisionForm(request.POST)
+    if form.is_valid():
+        decision = form.cleaned_data["decision"]
+        project.approval_status = (
+            Project.ApprovalStatus.APPROVED if decision == "approve" else Project.ApprovalStatus.DECLINED
+        )
+        project.decision_note = form.cleaned_data["decision_note"]
+        project.decided_by = request.user
+        project.decided_at = timezone.now()
+        project.save(update_fields=["approval_status", "decision_note", "decided_by", "decided_at", "updated_at"])
+        verb = "approved" if decision == "approve" else "declined"
+        log_activity(request.user, f"{verb} project", project.title)
+        _notify_project_circle(
+            project,
+            f"Project {verb}",
+            f"{request.user} {verb} the project '{project.title}'."
+            + (f" Note: {project.decision_note}" if project.decision_note else ""),
+        )
+        messages.success(request, f"Project '{project.title}' {verb}.")
+    else:
+        messages.error(request, "Invalid decision request.")
+    return HttpResponseRedirect(reverse("projects:project_detail", args=[project.pk]))
+
+
+@login_required
+@require_POST
+def project_grade(request, pk):
+    """Supervisor records the final grade for a project."""
+    project = get_object_or_404(Project, pk=pk)
+    if not is_project_supervisor(request.user, project):
+        raise PermissionDenied
+    form = ProjectGradeForm(request.POST, instance=project)
+    if form.is_valid():
+        project = form.save(commit=False)
+        project.graded_by = request.user
+        project.graded_at = timezone.now()
+        project.save(update_fields=["grade", "grade_comment", "graded_by", "graded_at", "updated_at"])
+        log_activity(request.user, "graded project", project.title, f"Grade: {project.grade}")
+        _notify_project_circle(
+            project,
+            "Project graded",
+            f"{request.user} graded '{project.title}': {project.grade}.",
+        )
+        messages.success(request, f"Grade '{project.grade}' recorded for '{project.title}'.")
+    else:
+        messages.error(request, "Please select a valid grade.")
+    return HttpResponseRedirect(reverse("projects:project_detail", args=[project.pk]))

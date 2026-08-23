@@ -27,11 +27,16 @@ MAX_SIZE = 10 * 1024 * 1024  # 10 MB
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        fields = ("file", "description")
+        fields = ("file", "category", "description")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, allowed_categories=None, project=None, uploader=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.project = project
+        self.uploader = uploader
         self.fields["description"].label = "Description (optional)"
+        if allowed_categories is not None:
+            choices = [c for c in Document.Category.choices if c[0] in allowed_categories]
+            self.fields["category"].choices = choices
         if self.instance.pk:
             self.fields["file"].required = False
             submit_label = "Update Document"
@@ -52,3 +57,19 @@ class DocumentForm(forms.ModelForm):
         if file.size > MAX_SIZE:
             raise forms.ValidationError("File size must be 10 MB or less.")
         return file
+
+    def clean_category(self):
+        category = self.cleaned_data.get("category")
+        if (
+            category == Document.Category.FINAL_SUBMISSION
+            and not self.instance.pk
+            and self.project is not None
+            and self.uploader is not None
+            and Document.objects.filter(
+                project=self.project, uploaded_by=self.uploader, category=Document.Category.FINAL_SUBMISSION
+            ).exists()
+        ):
+            raise forms.ValidationError(
+                "You have already submitted your final document for this project."
+            )
+        return category

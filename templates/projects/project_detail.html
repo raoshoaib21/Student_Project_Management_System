@@ -9,6 +9,9 @@
             <span class="badge text-bg-{% if project.status == 'COMPLETED' %}success{% elif project.status == 'ON_HOLD' %}warning{% elif project.status == 'CANCELLED' %}danger{% else %}primary{% endif %} align-middle">
                 {{ project.get_status_display }}
             </span>
+            <span class="badge text-bg-{% if project.approval_status == 'APPROVED' %}success{% elif project.approval_status == 'DECLINED' %}danger{% else %}warning{% endif %} align-middle">
+                <i class="bi bi-{% if project.approval_status == 'APPROVED' %}patch-check{% elif project.approval_status == 'DECLINED' %}x-circle{% else %}hourglass-split{% endif %} me-1"></i>{{ project.get_approval_status_display }}
+            </span>
         </h4>
         <span class="text-muted">
             Owner: <strong>{{ project.owner }}</strong> &middot; Supervisor: <strong>{{ project.supervisor }}</strong>
@@ -69,6 +72,82 @@
                         <div class="fw-semibold">{{ tasks|length }}</div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">
+        <i class="bi bi-clipboard2-check me-2"></i>Review &amp; Grading
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6 class="fw-semibold text-muted mb-3">Approval Decision</h6>
+                {% if is_assigned_supervisor %}
+                    {% if project.decided_at %}
+                        <p class="mb-3">
+                            Current decision:
+                            <span class="badge text-bg-{% if project.approval_status == 'APPROVED' %}success{% else %}danger{% endif %}">{{ project.get_approval_status_display }}</span>
+                            <span class="text-muted small ms-1">by {{ project.decided_by }} on {{ project.decided_at|date:"M j, Y H:i" }}</span>
+                        </p>
+                    {% endif %}
+                    <form method="post" action="{% url 'projects:project_decide' project.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            {{ decision_form.decision_note }}
+                        </div>
+                        <button type="submit" name="decision" value="approve" class="btn btn-success me-2">
+                            <i class="bi bi-check-lg me-1"></i>Approve
+                        </button>
+                        <button type="submit" name="decision" value="decline" class="btn btn-danger">
+                            <i class="bi bi-x-lg me-1"></i>Decline
+                        </button>
+                    </form>
+                {% else %}
+                    {% if project.decided_at %}
+                        <p class="mb-1">
+                            This project was
+                            <span class="badge text-bg-{% if project.approval_status == 'APPROVED' %}success{% else %}danger{% endif %}">{{ project.get_approval_status_display }}</span>
+                            by {{ project.decided_by }} on {{ project.decided_at|date:"M j, Y H:i" }}
+                        </p>
+                        {% if project.decision_note %}
+                            <p class="text-muted mb-0"><i class="bi bi-chat-left-text me-1"></i>{{ project.decision_note|linebreaksbr }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">Awaiting supervisor review against the project requirements.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="col-md-6 border-md-start">
+                <h6 class="fw-semibold text-muted mb-3">Final Grade</h6>
+                {% if is_assigned_supervisor %}
+                    <form method="post" action="{% url 'projects:project_grade' project.pk %}">
+                        {% csrf_token %}
+                        <div class="row g-2 align-items-start">
+                            <div class="col-auto">
+                                {{ grade_form.grade }}
+                            </div>
+                            <div class="col">
+                                {{ grade_form.grade_comment }}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">
+                            <i class="bi bi-award me-1"></i>{% if project.graded_at %}Update Grade{% else %}Record Grade{% endif %}
+                        </button>
+                    </form>
+                {% else %}
+                    {% if project.graded_at %}
+                        <p class="display-6 fw-bold mb-1">{{ project.grade }}</p>
+                        <p class="text-muted small mb-1">Graded by {{ project.graded_by }} on {{ project.graded_at|date:"M j, Y H:i" }}</p>
+                        {% if project.grade_comment %}
+                            <p class="text-muted mb-0"><i class="bi bi-chat-left-text me-1"></i>{{ project.grade_comment|linebreaksbr }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">Not graded yet.</p>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>

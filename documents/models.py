@@ -7,7 +7,23 @@ def project_file_path(instance, filename):
 
 
 class Document(models.Model):
+    class Category(models.TextChoices):
+        RESOURCE = "RESOURCE", "Resource"
+        APPENDIX = "APPENDIX", "Appendix"
+        GUIDELINE = "GUIDELINE", "Guideline"
+        SUPPORTING = "SUPPORTING", "Supporting Material"
+        FINAL_SUBMISSION = "FINAL_SUBMISSION", "Final Submission"
+
+    SUPERVISOR_CATEGORIES = (
+        Category.RESOURCE,
+        Category.APPENDIX,
+        Category.GUIDELINE,
+        Category.SUPPORTING,
+    )
+    STUDENT_CATEGORIES = (Category.FINAL_SUBMISSION,)
+
     project = models.ForeignKey("projects.Project", on_delete=models.CASCADE, related_name="documents")
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.RESOURCE)
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -24,6 +40,13 @@ class Document(models.Model):
 
     class Meta:
         ordering = ["-uploaded_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "uploaded_by"],
+                condition=models.Q(category="FINAL_SUBMISSION"),
+                name="unique_final_submission_per_student",
+            ),
+        ]
 
     def __str__(self):
         return self.name or self.file.name

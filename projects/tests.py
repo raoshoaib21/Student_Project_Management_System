@@ -81,15 +81,23 @@ class ProjectViewTests(TestCase):
         response = self.client.get(reverse("projects:project_list"))
         self.assertEqual(response.context["projects"].count(), 0)
 
-    def test_create_project_sets_owner_and_leader(self):
+    def test_create_denied_to_student(self):
         self.client.force_login(self.outsider)
         response = self.client.post(
             reverse("projects:project_create"),
             {"title": "New", "supervisor": self.supervisor.pk},
         )
-        project = Project.objects.get(title="New")
-        self.assertEqual(project.owner, self.outsider)
-        self.assertTrue(ProjectMember.objects.filter(project=project, user=self.outsider, role=ProjectMember.Role.LEADER).exists())
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Project.objects.filter(title="New").exists())
+
+    def test_create_allowed_for_supervisor(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(
+            reverse("projects:project_create"),
+            {"title": "Assigned", "supervisor": self.supervisor.pk},
+        )
+        project = Project.objects.get(title="Assigned")
+        self.assertEqual(project.owner, self.supervisor)
         self.assertRedirects(response, project.get_absolute_url())
 
     def test_detail_denied_to_non_member(self):
@@ -142,6 +150,138 @@ class ProjectViewTests(TestCase):
         response = self.client.post(reverse("projects:project_delete", args=[self.project.pk]))
         self.assertFalse(Project.objects.filter(pk=self.project.pk).exists())
         self.assertRedirects(response, reverse("projects:project_list"))
+
+
+class ProjectDecisionTests(TestCase):
+    def setUp(self):
+        self.supervisor = User.objects.create_user(username="sup", email="sup@example.com", password="x")
+        self.supervisor.role = User.Role.SUPERVISOR
+        self.supervisor.save()
+        self.owner = User.objects.create_user(username="owner", email="owner@example.com", password="x")
+        self.owner.role = User.Role.STUDENT
+        self.owner.save()
+        self.member = User.objects.create_user(username="member", email="member@example.com", password="x")
+        self.member.role = User.Role.STUDENT
+        self.member.save()
+        self.other_supervisor = User.objects.create_user(username="sup2", email="sup2@example.com", password="x")
+        self.other_supervisor.role = User.Role.SUPERVISOR
+        self.other_supervisor.save()
+        self.project = Project.objects.create(title="P", owner=self.owner, supervisor=self.supervisor)
+        ProjectMember.objects.create(project=self.project, user=self.owner, role=ProjectMember.Role.LEADER)
+        ProjectMember.objects.create(project=self.project, user=self.member)
+
+    def test_approve_by_assigned_supervisor(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(
+            reverse("projects:project_decide", args=[self.project.pk]),
+            {"decision": "approve", "decision_note": "Meets all requirements."},
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.approval_status, Project.ApprovalStatus.APPROVED)
+        self.assertEqual(self.project.decision_note, "Meets all requirements.")
+        self.assertEqual(self.project.decided_by, self.supervisor)
+        self.assertIsNotNone(self.project.decided_at)
+        self.assertRedirects(response, self.project.get_absolute_url())
+
+    def test_decline_by_assigned_supervisor(self):
+        self.client.force_login(self.supervisor)
+        self.client.post(
+            reverse("projects:project_decide", args=[self.project.pk]),
+            {"decision": "decline", "decision_note": "Scope too narrow."},
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.approval_status, Project.ApprovalStatus.DECLINED)
+
+    def test_decide_denied_to_students_and_other_supervisors(self):
+        for user in (self.owner, self.member, self.other_supervisor):
+            self.client.force_login(user)
+            response = self.client.post(
+                reverse("projects:project_decide", args=[self.project.pk]),
+                {"decision": "approve"},
+            )
+            self.assertEqual(response.status_code, 403, f"{user} should be denied")
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.approval_status, Project.ApprovalStatus.PENDING)
+
+    def test_decision_requires_valid_choice(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(
+            reverse("projects:project_decide", args=[self.project.pk]),
+            {"decision": "maybe"},
+        )
+        self.assertRedirects(response, self.project.get_absolute_url())
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.approval_status, Project.ApprovalStatus.PENDING)
+
+    def test_decision_notifies_members(self):
+        from core.models import Notification
+
+        before = Notification.objects.count()
+        self.client.force_login(self.supervisor)
+        self.client.post(
+            reverse("projects:project_decide", args=[self.project.pk]),
+            {"decision": "approve"},
+        )
+        self.assertEqual(Notification.objects.count(), before + 2)  # owner + member
+
+
+class ProjectGradeTests(TestCase):
+    def setUp(self):
+        self.supervisor = User.objects.create_user(username="sup", email="sup@example.com", password="x")
+        self.supervisor.role = User.Role.SUPERVISOR
+        self.supervisor.save()
+        self.student = User.objects.create_user(username="owner", email="owner@example.com", password="x")
+        self.student.role = User.Role.STUDENT
+        self.student.save()
+        self.outsider = User.objects.create_user(username="outsider", email="o@example.com", password="x")
+        self.outsider.role = User.Role.STUDENT
+        self.outsider.save()
+        self.project = Project.objects.create(title="P", owner=self.student, supervisor=self.supervisor)
+        ProjectMember.objects.create(project=self.project, user=self.student, role=ProjectMember.Role.LEADER)
+
+    def test_grade_by_supervisor(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(
+            reverse("projects:project_grade", args=[self.project.pk]),
+            {"grade": Project.Grade.A_PLUS, "grade_comment": "Excellent work."},
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.grade, "A+")
+        self.assertEqual(self.project.graded_by, self.supervisor)
+        self.assertIsNotNone(self.project.graded_at)
+        self.assertRedirects(response, self.project.get_absolute_url())
+
+    def test_grade_denied_to_others(self):
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("projects:project_grade", args=[self.project.pk]),
+            {"grade": Project.Grade.A},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.grade, "")
+
+    def test_grade_visible_to_student_on_detail(self):
+        from django.utils import timezone
+
+        self.project.grade = Project.Grade.B_PLUS
+        self.project.grade_comment = "Good effort."
+        self.project.graded_by = self.supervisor
+        self.project.graded_at = timezone.now()
+        self.project.save()
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("projects:project_detail", args=[self.project.pk]))
+        self.assertContains(response, "B+")
+        self.assertContains(response, "Good effort.")
+
+    def test_grade_required(self):
+        self.client.force_login(self.supervisor)
+        self.client.post(
+            reverse("projects:project_grade", args=[self.project.pk]),
+            {"grade": "", "grade_comment": "no grade"},
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.grade, "")
 
 
 class TaskViewTests(TestCase):

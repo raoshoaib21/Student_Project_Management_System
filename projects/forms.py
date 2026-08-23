@@ -57,6 +57,37 @@ class TaskForm(forms.ModelForm):
         self.helper.add_input(Submit("submit", "Save Task", css_class="btn btn-primary"))
 
 
+class ProjectDecisionForm(forms.Form):
+    """Supervisor approve/decline decision for a project."""
+
+    DECISIONS = (
+        ("approve", "Approve"),
+        ("decline", "Decline"),
+    )
+
+    decision = forms.ChoiceField(choices=DECISIONS)
+    decision_note = forms.CharField(
+        required=False,
+        label="Decision note (optional)",
+        widget=forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
+    )
+
+
+class ProjectGradeForm(forms.ModelForm):
+    """Supervisor final grade for a project."""
+
+    class Meta:
+        model = Project
+        fields = ("grade", "grade_comment")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["grade"].required = True
+        self.fields["grade"].widget.attrs["class"] = "form-select"
+        self.fields["grade_comment"].label = "Grade comment (optional)"
+        self.fields["grade_comment"].widget = forms.Textarea(attrs={"rows": 2, "class": "form-control"})
+
+
 class ProjectMemberForm(forms.ModelForm):
     class Meta:
         model = ProjectMember

@@ -28,6 +28,13 @@ def _notify_members(project, message, url, exclude=None):
         Notification.objects.create(user_id=user_id, title="New document uploaded", message=message, url=url)
 
 
+def allowed_categories_for(user, project):
+    """Supervisors share materials; students may only submit their final document."""
+    if user.is_authenticated and user.role == "SUPERVISOR" and project.supervisor_id == user.id:
+        return Document.SUPERVISOR_CATEGORIES
+    return Document.STUDENT_CATEGORIES
+
+
 class DocumentListView(LoginRequiredMixin, ListView):
     model = Document
     template_name = "documents/document_list.html"
@@ -40,16 +47,20 @@ class DocumentListView(LoginRequiredMixin, ListView):
         )
         q = self.request.GET.get("q", "").strip()
         project_id = self.request.GET.get("project", "")
+        category = self.request.GET.get("category", "")
         if q:
             qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
         if project_id.isdigit():
             qs = qs.filter(project_id=project_id)
+        if category in Document.Category.values:
+            qs = qs.filter(category=category)
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["active_page"] = "documents"
         context["projects"] = scoped_projects(self.request.user)
+        context["category_choices"] = Document.Category.choices
         return context
 
 
@@ -66,14 +77,26 @@ class DocumentCreateView(LoginRequiredMixin, CreateView):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["allowed_categories"] = allowed_categories_for(self.request.user, self.get_project())
+        kwargs["project"] = self.get_project()
+        kwargs["uploader"] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         form.instance.project = self.get_project()
         form.instance.uploaded_by = self.request.user
         response = super().form_valid(form)
-        log_activity(self.request.user, "uploaded document", self.object.name, f"in {self.object.project.title}")
+        log_activity(
+            self.request.user,
+            f"uploaded {self.object.get_category_display().lower()}",
+            self.object.name,
+            f"in {self.object.project.title}",
+        )
         _notify_members(
             self.object.project,
-            f"{self.request.user} uploaded '{self.object.name}'.",
+            f"{self.request.user} uploaded '{self.object.name}' ({self.object.get_category_display()}).",
             reverse("documents:document_detail", args=[self.object.pk]),
             exclude=self.request.user.id,
         )
@@ -107,6 +130,11 @@ class DocumentUpdateView(DocumentManageMixin, UpdateView):
     model = Document
     form_class = DocumentForm
     template_name = "documents/document_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["allowed_categories"] = (self.object.category,)
+        return kwargs
 
     def form_valid(self, form):
         response = super().form_valid(form)

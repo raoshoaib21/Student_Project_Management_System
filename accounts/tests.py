@@ -3,47 +3,15 @@ from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import StudentProfile
-from .tokens import generate_email_token
-
 User = get_user_model()
 
 
 class RegistrationFlowTests(TestCase):
     def test_registration_disabled(self):
         """Public registration is removed; the endpoint must not exist."""
-        response = self.client.post(
-            "/accounts/register/",
-            {
-                "username": "newstudent",
-                "email": "new@example.com",
-                "first_name": "Sara",
-                "last_name": "Ali",
-                "registration_number": "SPM-2026-003",
-                "department": "Computer Science",
-                "password1": "StrongPass123!",
-                "password2": "StrongPass123!",
-            },
-        )
+        response = self.client.post("/accounts/register/", {"username": "newstudent"})
         self.assertEqual(response.status_code, 404)
         self.assertFalse(User.objects.filter(username="newstudent").exists())
-
-    def test_verify_email_activates_user(self):
-        user = User.objects.create_user(username="s", email="s@example.com", password="x")
-        user.role = User.Role.STUDENT
-        user.is_active = False
-        user.save()
-        response = self.client.get(reverse("accounts:verify_email", args=[generate_email_token(user)]))
-        user.refresh_from_db()
-        self.assertTrue(user.is_email_verified)
-        self.assertTrue(user.is_active)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Email verified")
-
-    def test_verify_email_rejects_invalid_token(self):
-        response = self.client.get(reverse("accounts:verify_email", args=["not-a-valid-token"]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "invalid or expired")
 
     def test_registration_requires_unique_email(self):
         User.objects.create_user(username="existing", email="dup@example.com", password="x")

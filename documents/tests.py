@@ -50,9 +50,13 @@ class DocumentViewTests(TestCase):
         self.client.force_login(self.member)
         response = self.client.post(
             reverse("documents:document_upload", args=[self.project.pk]),
-            {"name": "Proposal.pdf", "file": SimpleUploadedFile("Proposal.pdf", b"pdf-bytes")},
+            {
+                "category": Document.Category.FINAL_SUBMISSION,
+                "file": SimpleUploadedFile("Proposal.pdf", b"pdf-bytes"),
+            },
         )
         doc = Document.objects.get(name="Proposal.pdf")
+        self.assertEqual(doc.category, Document.Category.FINAL_SUBMISSION)
         self.assertRedirects(response, doc.get_absolute_url())
         recipients = set(Notification.objects.values_list("user_id", flat=True))
         self.assertIn(self.owner.id, recipients)
@@ -86,7 +90,11 @@ class DocumentViewTests(TestCase):
         self.client.force_login(self.owner)
         response = self.client.post(
             reverse("documents:document_update", args=[self.document.pk]),
-            {"description": "Final design", "file": SimpleUploadedFile("design.txt", b"new contents")},
+            {
+                "category": self.document.category,
+                "description": "Final design",
+                "file": SimpleUploadedFile("design.txt", b"new contents"),
+            },
         )
         self.document.refresh_from_db()
         self.assertEqual(self.document.description, "Final design")
@@ -96,7 +104,7 @@ class DocumentViewTests(TestCase):
         self.client.force_login(self.owner)
         response = self.client.post(
             reverse("documents:document_update", args=[self.document.pk]),
-            {"description": "Description only"},
+            {"category": self.document.category, "description": "Description only"},
         )
         self.document.refresh_from_db()
         self.assertEqual(self.document.description, "Description only")
@@ -118,3 +126,63 @@ class DocumentViewTests(TestCase):
         self.client.force_login(self.outsider)
         response = self.client.get(reverse("documents:document_download", args=[self.document.pk]))
         self.assertEqual(response.status_code, 403)
+
+
+class DocumentCategoryTests(TestCase):
+    def setUp(self):
+        self.supervisor = User.objects.create_user(username="sup", email="sup@example.com", password="x")
+        self.supervisor.role = User.Role.SUPERVISOR
+        self.supervisor.save()
+        self.student = User.objects.create_user(username="student", email="student@example.com", password="x")
+        self.student.role = User.Role.STUDENT
+        self.student.save()
+        self.project = Project.objects.create(title="P", owner=self.student, supervisor=self.supervisor)
+        ProjectMember.objects.create(project=self.project, user=self.student, role=ProjectMember.Role.LEADER)
+
+    def _upload(self, user, **extra):
+        self.client.force_login(user)
+        payload = {"file": SimpleUploadedFile("file.txt", b"contents"), **extra}
+        return self.client.post(reverse("documents:document_upload", args=[self.project.pk]), payload)
+
+    def test_student_uploads_final_submission(self):
+        response = self._upload(self.student, category=Document.Category.FINAL_SUBMISSION)
+        doc = Document.objects.get(category=Document.Category.FINAL_SUBMISSION)
+        self.assertEqual(doc.uploaded_by, self.student)
+        self.assertRedirects(response, doc.get_absolute_url())
+
+    def test_student_cannot_upload_supervisor_materials(self):
+        for category in (Document.Category.RESOURCE, Document.Category.APPENDIX,
+                         Document.Category.GUIDELINE, Document.Category.SUPPORTING):
+            before = Document.objects.count()
+            response = self._upload(self.student, category=category)
+            self.assertEqual(response.status_code, 200)  # form re-renders with error
+            self.assertEqual(Document.objects.count(), before, f"{category} should be rejected")
+
+    def test_supervisor_cannot_upload_final_submission(self):
+        response = self._upload(self.supervisor, category=Document.Category.FINAL_SUBMISSION)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            Document.objects.filter(category=Document.Category.FINAL_SUBMISSION).exists()
+        )
+
+    def test_supervisor_uploads_guiding_materials(self):
+        for category in Document.SUPERVISOR_CATEGORIES:
+            response = self._upload(self.supervisor, category=category)
+            self.assertTrue(
+                Document.objects.filter(category=category).exists(), f"{category} upload failed"
+            )
+            self.assertRegex(str(response.status_code), r"30\d")
+
+    def test_duplicate_final_submission_rejected_with_error(self):
+        Document.objects.create(
+            project=self.project,
+            uploaded_by=self.student,
+            category=Document.Category.FINAL_SUBMISSION,
+            file=SimpleUploadedFile("final.pdf", b"first"),
+        )
+        response = self._upload(self.student, category=Document.Category.FINAL_SUBMISSION)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already submitted your final document")
+        self.assertEqual(
+            Document.objects.filter(category=Document.Category.FINAL_SUBMISSION).count(), 1
+        )

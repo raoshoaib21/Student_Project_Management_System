@@ -10,6 +10,24 @@ class Project(models.Model):
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
 
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending Review"
+        APPROVED = "APPROVED", "Approved"
+        DECLINED = "DECLINED", "Declined"
+
+    class Grade(models.TextChoices):
+        A_PLUS = "A+", "A+"
+        A = "A", "A"
+        A_MINUS = "A-", "A-"
+        B_PLUS = "B+", "B+"
+        B = "B", "B"
+        B_MINUS = "B-", "B-"
+        C_PLUS = "C+", "C+"
+        C = "C", "C"
+        C_MINUS = "C-", "C-"
+        D = "D", "D"
+        F = "F", "F"
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     supervisor = models.ForeignKey(
@@ -24,6 +42,30 @@ class Project(models.Model):
         related_name="owned_projects",
     )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PLANNING)
+    approval_status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING,
+    )
+    decision_note = models.TextField(blank=True)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="project_decisions",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    grade = models.CharField(max_length=2, choices=Grade.choices, blank=True)
+    grade_comment = models.TextField(blank=True)
+    graded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="graded_projects",
+    )
+    graded_at = models.DateTimeField(null=True, blank=True)
     start_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

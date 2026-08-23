@@ -62,14 +62,10 @@ class ProjectManageAccessMixin:
 
 
 class TaskAccessMixin:
-    """Manage a task: managers always; other members only if they created it."""
+    """Create/edit/delete a task: project managers only. Students update status instead."""
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        user = self.request.user
-        if not is_project_member(user, obj.project):
+        if not is_project_manager(self.request.user, obj.project):
             raise PermissionDenied
-        if not is_project_manager(user, obj.project) and not is_project_leader(user, obj.project):
-            if user.id != obj.created_by_id:
-                raise PermissionDenied
         return obj

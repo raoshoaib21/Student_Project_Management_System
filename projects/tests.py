@@ -109,6 +109,8 @@ class ProjectViewTests(TestCase):
         self.client.force_login(self.member)
         response = self.client.get(reverse("projects:project_detail", args=[self.project.pk]))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Task Updates")
+        self.assertContains(response, "Project Submission")
 
     def test_update_denied_to_member(self):
         self.client.force_login(self.member)
@@ -305,14 +307,32 @@ class TaskViewTests(TestCase):
             project=self.project, title="T", assignee=self.member, created_by=self.owner
         )
 
-    def test_task_create_allowed_for_member(self):
-        self.client.force_login(self.member)
+    def test_task_create_allowed_for_manager(self):
+        self.client.force_login(self.supervisor)
         response = self.client.post(
             reverse("projects:task_create", args=[self.project.pk]),
-            {"title": "New task", "assignee": self.member.pk, "priority": Task.Priority.HIGH},
+            {"title": "Supervisor task", "assignee": self.member.pk, "priority": Task.Priority.HIGH},
         )
-        self.assertTrue(Task.objects.filter(project=self.project, title="New task").exists())
+        self.assertTrue(Task.objects.filter(project=self.project, title="Supervisor task").exists())
         self.assertRedirects(response, reverse("projects:project_detail", args=[self.project.pk]))
+
+    def test_task_create_denied_to_member(self):
+        self.client.force_login(self.member)
+        before = Task.objects.count()
+        response = self.client.post(
+            reverse("projects:task_create", args=[self.project.pk]),
+            {"title": "Student task", "assignee": self.member.pk},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Task.objects.count(), before)
+
+    def test_assignee_queryset_excludes_supervisor(self):
+        from .forms import project_user_queryset
+
+        ids = set(project_user_queryset(self.project).values_list("id", flat=True))
+        self.assertNotIn(self.supervisor.id, ids)
+        self.assertIn(self.member.id, ids)
+        self.assertIn(self.owner.id, ids)
 
     def test_task_create_denied_for_outsider(self):
         self.client.force_login(self.outsider)

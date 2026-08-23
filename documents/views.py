@@ -77,6 +77,14 @@ class DocumentCreateView(LoginRequiredMixin, CreateView):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get_initial(self):
+        initial = super().get_initial()
+        category = self.request.GET.get("category")
+        allowed = allowed_categories_for(self.request.user, self.get_project())
+        if category in Document.Category.values and category in allowed:
+            initial["category"] = category
+        return initial
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["allowed_categories"] = allowed_categories_for(self.request.user, self.get_project())

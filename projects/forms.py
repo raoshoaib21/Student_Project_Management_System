@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
@@ -13,11 +14,12 @@ class DateInput(forms.DateInput):
 
 
 def project_user_queryset(project):
-    """Users who may work on a project: members, owner and supervisor."""
-    user_ids = set(project.members.values_list("user_id", flat=True))
-    user_ids.add(project.owner_id)
-    user_ids.add(project.supervisor_id)
-    return User.objects.filter(id__in=user_ids)
+    """Students working on the project — the only valid task assignees."""
+    member_ids = set(project.members.values_list("user_id", flat=True))
+    return User.objects.filter(
+        Q(id__in=member_ids) | Q(id=project.owner_id),
+        role=User.Role.STUDENT,
+    )
 
 
 class ProjectForm(forms.ModelForm):

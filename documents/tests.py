@@ -186,3 +186,17 @@ class DocumentCategoryTests(TestCase):
         self.assertEqual(
             Document.objects.filter(category=Document.Category.FINAL_SUBMISSION).count(), 1
         )
+
+    def test_category_preselect_via_query_param(self):
+        self.client.force_login(self.student)
+        response = self.client.get(
+            reverse("documents:document_upload", args=[self.project.pk]) + "?category=FINAL_SUBMISSION"
+        )
+        self.assertEqual(response.context["form"].initial.get("category"), Document.Category.FINAL_SUBMISSION)
+
+    def test_category_preselect_ignored_when_not_allowed(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.get(
+            reverse("documents:document_upload", args=[self.project.pk]) + "?category=FINAL_SUBMISSION"
+        )
+        self.assertIsNone(response.context["form"].initial.get("category"))

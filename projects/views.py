@@ -115,6 +115,24 @@ class ProjectDetailView(LoginRequiredMixin,ProjectViewAccessMixin, DetailView):
         context["is_assigned_supervisor"] = is_project_supervisor(self.request.user, self.object)
         context["decision_form"] = ProjectDecisionForm()
         context["grade_form"] = ProjectGradeForm(instance=self.object)
+
+        tasks = list(self.object.tasks.select_related("assignee"))
+        done = sum(1 for t in tasks if t.status == Task.Status.DONE)
+        in_progress = sum(1 for t in tasks if t.status == Task.Status.IN_PROGRESS or t.status == Task.Status.REVIEW)
+        total = len(tasks)
+        context["tasks_total"] = total
+        context["tasks_done"] = done
+        context["tasks_in_progress"] = in_progress
+        context["tasks_remaining"] = total - done
+        context["tasks_progress"] = round(done / total * 100) if total else 0
+
+        submissions = self.object.documents.filter(
+            category="FINAL_SUBMISSION"
+        ).select_related("uploaded_by")
+        context["final_submissions"] = submissions
+        context["my_final_submission"] = next(
+            (d for d in submissions if d.uploaded_by_id == self.request.user.id), None
+        )
         context["task_status_choices"] = Task.Status.choices
         context["documents"] = self.object.documents.select_related("uploaded_by")[:5]
         context["documents_count"] = self.object.documents.count()
@@ -251,7 +269,7 @@ class TaskCreateView(LoginRequiredMixin,CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         project = self.get_project()
-        if not is_project_member(request.user, project):
+        if not is_project_manager(request.user, project):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 

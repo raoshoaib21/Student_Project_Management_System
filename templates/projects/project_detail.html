@@ -18,14 +18,20 @@
         </span>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'documents:document_upload' project.pk %}" class="btn btn-primary">
-            <i class="bi bi-cloud-upload me-1"></i>Upload Document
-        </a>
+        {% if is_manager %}
+            <a href="{% url 'documents:document_upload' project.pk %}?category=RESOURCE" class="btn btn-primary">
+                <i class="bi bi-cloud-upload me-1"></i>Share Resource
+            </a>
+            <a href="{% url 'projects:task_create' project.pk %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>New Task
+            </a>
+        {% else %}
+            <a href="{% url 'documents:document_upload' project.pk %}?category=FINAL_SUBMISSION" class="btn btn-primary">
+                <i class="bi bi-file-earmark-arrow-up me-1"></i>{% if my_final_submission %}Replace Submission{% else %}Submit Final Document{% endif %}
+            </a>
+        {% endif %}
         <a href="{% url 'progress:report_create' project.pk %}" class="btn btn-success">
             <i class="bi bi-file-earmark-plus me-1"></i>New Report
-        </a>
-        <a href="{% url 'projects:task_create' project.pk %}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>New Task
         </a>
         {% if is_manager %}
             <a href="{% url 'projects:project_members' project.pk %}" class="btn btn-outline-primary">
@@ -156,12 +162,20 @@
 <div class="row g-3">
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-semibold">
-                <i class="bi bi-list-check me-2"></i>Tasks
-                <span class="badge bg-primary ms-1">{{ tasks|length }}</span>
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-list-check me-2"></i>Task Updates
+                    <span class="badge bg-primary ms-1">{{ tasks|length }}</span>
+                </span>
+                <span class="text-muted small fw-normal">
+                    {{ tasks_done }} done &middot; {{ tasks_in_progress }} in progress &middot; {{ tasks_remaining }} remaining
+                </span>
             </div>
             <div class="card-body">
                 {% if tasks %}
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ tasks_progress }}%;"></div>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
@@ -201,12 +215,14 @@
                                         </td>
                                         <td>{{ task.due_date|default:"—" }}</td>
                                         <td class="text-end">
-                                            <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a href="{% url 'projects:task_delete' task.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
+                                            {% if is_manager %}
+                                                <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url 'projects:task_delete' task.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -216,7 +232,11 @@
                 {% else %}
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-list-check fs-1 d-block mb-2"></i>
-                        No tasks yet. <a href="{% url 'projects:task_create' project.pk %}">Create the first task</a>.
+                        {% if is_manager %}
+                            No tasks yet. <a href="{% url 'projects:task_create' project.pk %}">Create the first task</a>.
+                        {% else %}
+                            No tasks yet. Your supervisor has not assigned any tasks for this project.
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
@@ -226,7 +246,49 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-header bg-white fw-semibold">
-                <i class="bi bi-file-earmark-text me-2"></i>Documents
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>Project Submission
+            </div>
+            {% if my_final_submission %}
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <a href="{{ my_final_submission.get_absolute_url }}" class="text-decoration-none fw-semibold">
+                            <i class="bi bi-file-earmark-check text-success me-1"></i>{{ my_final_submission.name }}
+                        </a>
+                        <div class="text-muted small">Submitted {{ my_final_submission.uploaded_at|date:"M j, Y H:i" }}</div>
+                    </li>
+                </ul>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'documents:document_upload' project.pk %}?category=FINAL_SUBMISSION" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-arrow-repeat me-1"></i>Replace Submission
+                    </a>
+                </div>
+            {% elif final_submissions %}
+                <ul class="list-group list-group-flush">
+                    {% for submission in final_submissions %}
+                        <li class="list-group-item">
+                            <a href="{{ submission.get_absolute_url }}" class="text-decoration-none">
+                                <i class="bi bi-file-earmark me-1"></i>{{ submission.name }}
+                            </a>
+                            <div class="text-muted small">by {{ submission.uploaded_by }} &middot; {{ submission.uploaded_at|date:"M j, Y" }}</div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="card-body text-center text-muted py-4">
+                    <i class="bi bi-file-earmark-arrow-up fs-1 d-block mb-2"></i>
+                    Final document not submitted yet.
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'documents:document_upload' project.pk %}?category=FINAL_SUBMISSION" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-upload me-1"></i>Submit Final Document
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-collection me-2"></i>Resources
                 <span class="badge bg-primary ms-1">{{ documents_count }}</span>
             </div>
             <ul class="list-group list-group-flush">
@@ -241,11 +303,13 @@
                     <li class="list-group-item text-muted text-center">No documents yet.</li>
                 {% endfor %}
             </ul>
-            <div class="card-footer bg-white">
-                <a href="{% url 'documents:document_upload' project.pk %}" class="btn btn-sm btn-outline-primary w-100">
-                    <i class="bi bi-cloud-upload me-1"></i>Upload Document
-                </a>
-            </div>
+            {% if is_manager %}
+                <div class="card-footer bg-white">
+                    <a href="{% url 'documents:document_upload' project.pk %}?category=RESOURCE" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-cloud-upload me-1"></i>Share Resource
+                    </a>
+                </div>
+            {% endif %}
         </div>
 
         <div class="card border-0 shadow-sm mb-3">

@@ -90,6 +90,55 @@ class Project(models.Model):
         return reverse("projects:project_detail", args=[self.pk])
 
 
+class ProjectProposal(models.Model):
+    """A student's pitch for what they want to build, reviewed by a supervisor."""
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending Review"
+        APPROVED = "APPROVED", "Approved"
+        DECLINED = "DECLINED", "Declined"
+
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="project_proposals",
+        limit_choices_to={"role": "STUDENT"},
+    )
+    supervisor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="proposals_to_review",
+        limit_choices_to={"role": "SUPERVISOR"},
+        help_text="The supervisor who will review this proposal.",
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(help_text="What are you going to build and why?")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    supervisor_feedback = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_proposals",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    project = models.ForeignKey(
+        "Project",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_proposal",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} — {self.student} → {self.supervisor}"
+
+
 class ProjectMember(models.Model):
     class Role(models.TextChoices):
         LEADER = "LEADER", "Leader"

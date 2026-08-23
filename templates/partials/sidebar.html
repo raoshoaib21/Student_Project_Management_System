@@ -24,6 +24,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{% url 'projects:proposal_list' %}" class="nav-link {% if active_page == 'proposals' %}active{% endif %}">
+                    <i class="bi bi-lightbulb"></i><span>Proposals</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{% url 'projects:task_list' %}" class="nav-link {% if active_page == 'tasks' %}active{% endif %}">
                     <i class="bi bi-check2-square"></i><span>Tasks</span>
                 </a>

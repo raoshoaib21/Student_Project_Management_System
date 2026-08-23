@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ page_title|default:"Project Proposal" }} | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-lightbulb me-2"></i>{{ page_title|default:"Project Proposal" }}</h4>
+        <span class="text-muted">Describe what you're going to build. Your supervisor will approve it or give feedback to help you refine it.</span>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm" style="max-width: 760px;">
+    <div class="card-body">
+        {% crispy form %}
+    </div>
+</div>
+{% endblock %}

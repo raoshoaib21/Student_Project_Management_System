@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Project, ProjectMember, Task
+from .models import Project, ProjectMember, ProjectProposal, Task
 from .permissions import is_project_leader, is_project_manager, is_project_member, scoped_projects
 
 User = get_user_model()
@@ -111,6 +111,22 @@ class ProjectViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Task Updates")
         self.assertContains(response, "Project Submission")
+        self.assertContains(response, "Submit Final Document")
+        self.assertNotContains(response, "Share Resource")
+        self.assertNotContains(response, "New Task")
+
+    def test_detail_shows_management_to_supervisor_only(self):
+        # Student owner must NOT see task management even though they own the project.
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("projects:project_detail", args=[self.project.pk]))
+        self.assertContains(response, "Submit Final Document")
+        self.assertNotContains(response, "New Task")
+        self.assertNotContains(response, 'title="Edit"')
+        self.assertNotContains(response, 'title="Delete"')
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("projects:project_detail", args=[self.project.pk]))
+        self.assertContains(response, "Share Resource")
+        self.assertContains(response, "New Task")
 
     def test_update_denied_to_member(self):
         self.client.force_login(self.member)
@@ -286,6 +302,124 @@ class ProjectGradeTests(TestCase):
         self.assertEqual(self.project.grade, "")
 
 
+class ProposalFlowTests(TestCase):
+    def setUp(self):
+        self.supervisor = User.objects.create_user(username="sup", email="sup@example.com", password="x")
+        self.supervisor.role = User.Role.SUPERVISOR
+        self.supervisor.save()
+        self.other_supervisor = User.objects.create_user(username="sup2", email="sup2@example.com", password="x")
+        self.other_supervisor.role = User.Role.SUPERVISOR
+        self.other_supervisor.save()
+        self.student = User.objects.create_user(username="student", email="student@example.com", password="x")
+        self.student.role = User.Role.STUDENT
+        self.student.save()
+        self.proposal = ProjectProposal.objects.create(
+            student=self.student,
+            supervisor=self.supervisor,
+            title="Campus Navigator",
+            description="A map app for campus navigation.",
+        )
+
+    def test_student_creates_proposal_notifies_selected_supervisor(self):
+        from core.models import Notification
+
+        before = Notification.objects.count()
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse("projects:proposal_create"),
+            {
+                "supervisor": self.supervisor.pk,
+                "title": "Study Buddy",
+                "description": "Match students for group study.",
+            },
+        )
+        proposal = ProjectProposal.objects.get(title="Study Buddy")
+        self.assertEqual(proposal.student, self.student)
+        self.assertEqual(proposal.supervisor, self.supervisor)
+        self.assertEqual(proposal.status, ProjectProposal.Status.PENDING)
+        self.assertRedirects(response, reverse("projects:proposal_list"))
+        latest = Notification.objects.order_by("-pk").first()
+        self.assertEqual(Notification.objects.count(), before + 1)
+        self.assertEqual(latest.user, self.supervisor)
+
+    def test_supervisor_cannot_propose(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("projects:proposal_create"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_approve_creates_assigned_project(self):
+        from core.models import Notification
+
+        before = Notification.objects.count()
+        self.client.force_login(self.supervisor)
+        response = self.client.post(
+            reverse("projects:proposal_decide", args=[self.proposal.pk]),
+            {"decision": "approve", "decision_note": "Solid idea."},
+        )
+        self.assertRedirects(response, reverse("projects:proposal_list"))
+        self.proposal.refresh_from_db()
+        self.assertEqual(self.proposal.status, ProjectProposal.Status.APPROVED)
+        project = self.proposal.project
+        self.assertIsNotNone(project)
+        self.assertEqual(project.owner, self.supervisor)
+        self.assertEqual(project.supervisor, self.supervisor)
+        self.assertTrue(
+            ProjectMember.objects.filter(project=project, user=self.student, role=ProjectMember.Role.LEADER).exists()
+        )
+        self.assertEqual(Notification.objects.count(), before + 1)
+
+    def test_decline_stores_feedback_and_notifies(self):
+        from core.models import Notification
+
+        before = Notification.objects.count()
+        self.client.force_login(self.supervisor)
+        self.client.post(
+            reverse("projects:proposal_decide", args=[self.proposal.pk]),
+            {"decision": "decline", "decision_note": "Narrow the scope to one building."},
+        )
+        self.proposal.refresh_from_db()
+        self.assertEqual(self.proposal.status, ProjectProposal.Status.DECLINED)
+        self.assertEqual(self.proposal.supervisor_feedback, "Narrow the scope to one building.")
+        self.assertIsNone(self.proposal.project)
+        self.assertFalse(Project.objects.filter(title="Campus Navigator").exists())
+        self.assertEqual(Notification.objects.count(), before + 1)
+
+    def test_decide_denied_to_students_and_other_supervisors(self):
+        for user in (self.student, self.other_supervisor):
+            self.client.force_login(user)
+            response = self.client.post(
+                reverse("projects:proposal_decide", args=[self.proposal.pk]),
+                {"decision": "approve"},
+            )
+            self.assertEqual(response.status_code, 403, f"{user} should be denied")
+        self.proposal.refresh_from_db()
+        self.assertEqual(self.proposal.status, ProjectProposal.Status.PENDING)
+
+    def test_proposals_scoped_for_students(self):
+        other = User.objects.create_user(username="other", email="other@example.com", password="x")
+        other.role = User.Role.STUDENT
+        other.save()
+        ProjectProposal.objects.create(
+            student=other, supervisor=self.supervisor, title="Other idea", description="Not mine."
+        )
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("projects:proposal_list"))
+        self.assertEqual(response.context["proposals"].count(), 1)
+
+    def test_supervisor_sees_only_proposals_sent_to_them(self):
+        other = User.objects.create_user(username="other", email="other@example.com", password="x")
+        other.role = User.Role.STUDENT
+        other.save()
+        ProjectProposal.objects.create(
+            student=other, supervisor=self.other_supervisor, title="Not mine", description="For sup2."
+        )
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("projects:proposal_list"))
+        titles = [p.title for p in response.context["proposals"]]
+        self.assertIn("Campus Navigator", titles)
+        self.assertNotIn("Not mine", titles)
+
+
 class TaskViewTests(TestCase):
     def setUp(self):
         self.supervisor = User.objects.create_user(username="sup", email="sup@example.com", password="x")
@@ -342,8 +476,8 @@ class TaskViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_task_edit_allowed_for_manager(self):
-        self.client.force_login(self.owner)
+    def test_task_edit_allowed_for_supervisor(self):
+        self.client.force_login(self.supervisor)
         response = self.client.post(
             reverse("projects:task_update", args=[self.task.pk]),
             {"title": "Edited", "assignee": self.member.pk, "priority": Task.Priority.MEDIUM, "status": Task.Status.IN_PROGRESS},
@@ -352,13 +486,18 @@ class TaskViewTests(TestCase):
         self.assertEqual(self.task.title, "Edited")
         self.assertRedirects(response, reverse("projects:project_detail", args=[self.project.pk]))
 
+    def test_task_edit_denied_to_student_owner(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("projects:task_update", args=[self.task.pk]))
+        self.assertEqual(response.status_code, 403)
+
     def test_task_edit_denied_for_outsider(self):
         self.client.force_login(self.outsider)
         response = self.client.get(reverse("projects:task_update", args=[self.task.pk]))
         self.assertEqual(response.status_code, 403)
 
     def test_task_delete(self):
-        self.client.force_login(self.owner)
+        self.client.force_login(self.supervisor)
         response = self.client.post(reverse("projects:task_delete", args=[self.task.pk]))
         self.assertFalse(Task.objects.filter(pk=self.task.pk).exists())
         self.assertRedirects(response, reverse("projects:project_detail", args=[self.project.pk]))

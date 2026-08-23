@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, TemplateView
 
-from projects.models import Task
+from projects.models import Project, ProjectProposal, Task
 from projects.permissions import scoped_projects
 
 from .forms import ContactForm
@@ -54,6 +54,14 @@ def dashboard(request):
         "my_tasks": my_tasks,
         "recent_activities": user.activities.all()[:10],
     }
+    if user.is_student:
+        context["my_proposal"] = (
+            ProjectProposal.objects.filter(student=user).order_by("-created_at").first()
+        )
+        context["submission_target"] = (
+            projects.filter(members__user=user, status=Project.Status.COMPLETED).first()
+            or projects.filter(members__user=user).first()
+        )
     return render(request, "core/dashboard.html", context)
 
 

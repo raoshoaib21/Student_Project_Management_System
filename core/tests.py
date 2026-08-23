@@ -181,3 +181,26 @@ class ActivityLogViewTests(TestCase):
         self.client.force_login(self.student)
         response = self.client.get(reverse("core:activity_log"), {"q": "created"})
         self.assertEqual(response.context["activities"].count(), 1)
+
+
+class StudentDashboardTests(TestCase):
+    def setUp(self):
+        self.supervisor = User.objects.create_user(username="sup", email="sup@example.com", password="x")
+        self.supervisor.role = User.Role.SUPERVISOR
+        self.supervisor.save()
+        self.student = User.objects.create_user(username="student", email="student@example.com", password="x")
+        self.student.role = User.Role.STUDENT
+        self.student.save()
+
+    def test_student_sees_proposal_button_not_new_project(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("core:dashboard"))
+        self.assertContains(response, "Project Proposal")
+        self.assertContains(response, "Project Submission")
+        self.assertNotContains(response, "New Project")
+
+    def test_supervisor_sees_new_project_button(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("core:dashboard"))
+        self.assertContains(response, "New Project")
+        self.assertNotContains(response, "Project Proposal")

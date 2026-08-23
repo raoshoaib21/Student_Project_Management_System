@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Project Proposals | Student PMS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-lightbulb me-2"></i>Project Proposals</h4>
+        <span class="text-muted">
+            {% if request.user.is_supervisor %}
+                Review student pitches — approve to assign the project, or decline with feedback.
+            {% else %}
+                Pitch what you want to build. Your supervisor approves it or gives feedback.
+            {% endif %}
+        </span>
+    </div>
+    {% if request.user.is_student %}
+        <a href="{% url 'projects:proposal_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Submit Proposal
+        </a>
+    {% endif %}
+</div>
+
+{% if proposals %}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Proposal</th>
+                        {% if request.user.is_supervisor %}<th>Student</th>{% else %}<th>Supervisor</th>{% endif %}
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proposal in proposals %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ proposal.title }}</div>
+                                <div class="text-muted small">{{ proposal.description|truncatechars:90 }}</div>
+                                {% if proposal.supervisor_feedback %}
+                                    <div class="small mt-1"><i class="bi bi-chat-left-text me-1"></i>{{ proposal.supervisor_feedback }}</div>
+                                {% endif %}
+                            </td>
+                            {% if request.user.is_supervisor %}<td>{{ proposal.student }}</td>{% else %}<td>{{ proposal.supervisor }}</td>{% endif %}
+                            <td>
+                                <span class="badge text-bg-{% if proposal.status == 'APPROVED' %}success{% elif proposal.status == 'DECLINED' %}danger{% else %}warning{% endif %}">
+                                    {{ proposal.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ proposal.created_at|date:"M j, Y" }}</td>
+                            <td class="text-end">
+                                {% if proposal.status == 'APPROVED' and proposal.project %}
+                                    <a href="{{ proposal.project.get_absolute_url }}" class="btn btn-sm btn-outline-success">Open Project</a>
+                                {% elif request.user.is_supervisor and proposal.status == 'PENDING' %}
+                                    <form method="post" action="{% url 'projects:proposal_decide' proposal.pk %}" class="d-flex gap-2 justify-content-end align-items-center">
+                                        {% csrf_token %}
+                                        <input type="text" name="decision_note" class="form-control form-control-sm" style="max-width:180px;" placeholder="Feedback (optional)">
+                                        <button type="submit" name="decision" value="approve" class="btn btn-sm btn-success">Approve</button>
+                                        <button type="submit" name="decision" value="decline" class="btn btn-sm btn-outline-danger">Decline</button>
+                                    </form>
+                                {% elif proposal.status == 'PENDING' %}
+                                    <span class="text-muted small">Awaiting review</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+        <nav class="mt-4" aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-lightbulb fs-1 d-block mb-2"></i>
+            {% if request.user.is_supervisor %}
+                No proposals yet. Students' project pitches will appear here for review.
+            {% else %}
+                You haven't submitted a proposal yet. Share what you're planning to build.
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

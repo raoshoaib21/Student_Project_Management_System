@@ -62,10 +62,10 @@ class ProjectManageAccessMixin:
 
 
 class TaskAccessMixin:
-    """Create/edit/delete a task: project managers only. Students update status instead."""
+    """Create/edit/delete a task: only the assigned supervisor. Students update status instead."""
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        if not is_project_manager(self.request.user, obj.project):
+        if not is_project_supervisor(self.request.user, obj.project):
             raise PermissionDenied
         return obj

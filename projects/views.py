@@ -19,9 +19,10 @@ from .forms import (
     ProjectForm,
     ProjectGradeForm,
     ProjectMemberForm,
+    ProjectProposalForm,
     TaskForm,
 )
-from .models import Project, ProjectMember, Task
+from .models import Project, ProjectMember, ProjectProposal, Task
 from .permissions import (
     ProjectManageAccessMixin,
     ProjectViewAccessMixin,
@@ -228,6 +229,114 @@ class ProjectMembersView(LoginRequiredMixin,FormView):
         return HttpResponseRedirect(reverse("projects:project_members", args=[project.pk]))
 
 
+class ProposalListView(LoginRequiredMixin, ListView):
+    """Students see their own proposals; supervisors review all of them."""
+
+    model = ProjectProposal
+    template_name = "projects/proposal_list.html"
+    context_object_name = "proposals"
+    paginate_by = 15
+
+    def get_queryset(self):
+        qs = ProjectProposal.objects.select_related("student", "supervisor", "reviewed_by", "project")
+        if self.request.user.is_student:
+            qs = qs.filter(student=self.request.user)
+        else:
+            qs = qs.filter(supervisor=self.request.user)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "proposals"
+        context["decision_form"] = ProjectDecisionForm()
+        return context
+
+
+class ProposalCreateView(RoleRequiredMixin, CreateView):
+    """Students pitch what they want to build; supervisors cannot propose."""
+
+    roles = (User.Role.STUDENT,)
+    model = ProjectProposal
+    form_class = ProjectProposalForm
+    template_name = "projects/proposal_form.html"
+
+    def form_valid(self, form):
+        form.instance.student = self.request.user
+        response = super().form_valid(form)
+        log_activity(self.request.user, "submitted project proposal", self.object.title)
+        Notification.objects.create(
+            user=self.object.supervisor,
+            title="New project proposal",
+            message=f"{self.request.user} submitted a proposal '{self.object.title}' for your review.",
+            url=reverse("projects:proposal_list"),
+        )
+        messages.success(self.request, f"Proposal sent to {self.object.supervisor} for review.")
+        return response
+
+    def get_success_url(self):
+        return reverse("projects:proposal_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "proposals"
+        context["page_title"] = "Project Proposal"
+        return context
+
+
+@login_required
+@require_POST
+def proposal_decide(request, pk):
+    """The selected supervisor approves (auto-creating the assigned project) or declines with feedback."""
+    proposal = get_object_or_404(ProjectProposal, pk=pk)
+    if not is_project_supervisor(request.user, proposal):
+        raise PermissionDenied
+    form = ProjectDecisionForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Invalid decision request.")
+        return HttpResponseRedirect(reverse("projects:proposal_list"))
+
+    decision = form.cleaned_data["decision"]
+    feedback = form.cleaned_data["decision_note"]
+    proposal.supervisor_feedback = feedback
+    proposal.reviewed_by = request.user
+    proposal.reviewed_at = timezone.now()
+
+    if decision == "approve":
+        if not proposal.project:
+            project = Project.objects.create(
+                title=proposal.title,
+                description=proposal.description,
+                owner=request.user,
+                supervisor=request.user,
+            )
+            ProjectMember.objects.create(
+                project=project, user=proposal.student, role=ProjectMember.Role.LEADER
+            )
+            proposal.project = project
+        proposal.status = ProjectProposal.Status.APPROVED
+        log_activity(request.user, "approved proposal", proposal.title)
+        Notification.objects.create(
+            user=proposal.student,
+            title="Proposal approved",
+            message=f"{request.user} approved your proposal '{proposal.title}'. The project is now assigned to you.",
+            url=proposal.project.get_absolute_url() if proposal.project else reverse("projects:project_list"),
+        )
+        messages.success(request, f"Proposal approved — '{proposal.title}' is now an assigned project.")
+    else:
+        proposal.status = ProjectProposal.Status.DECLINED
+        log_activity(request.user, "declined proposal", proposal.title)
+        Notification.objects.create(
+            user=proposal.student,
+            title="Proposal declined",
+            message=f"{request.user} declined your proposal '{proposal.title}'."
+            + (f" Feedback: {feedback}" if feedback else ""),
+            url=reverse("projects:proposal_list"),
+        )
+        messages.success(request, f"Proposal '{proposal.title}' declined with feedback.")
+    proposal.save()
+    return HttpResponseRedirect(reverse("projects:proposal_list"))
+
+
 class TaskListView(LoginRequiredMixin,ListView):
     model = Task
     template_name = "projects/task_list.html"
@@ -269,7 +378,7 @@ class TaskCreateView(LoginRequiredMixin,CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         project = self.get_project()
-        if not is_project_manager(request.user, project):
+        if not is_project_supervisor(request.user, project):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 

@@ -4,7 +4,7 @@ from django.db.models import Q
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from .models import Project, ProjectMember, Task
+from .models import Project, ProjectMember, ProjectProposal, Task
 
 User = get_user_model()
 
@@ -57,6 +57,25 @@ class TaskForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.add_input(Submit("submit", "Save Task", css_class="btn btn-primary"))
+
+
+class ProjectProposalForm(forms.ModelForm):
+    """A student's pitch for a project they want to build, sent to a chosen supervisor."""
+
+    class Meta:
+        model = ProjectProposal
+        fields = ("supervisor", "title", "description")
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 5}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["supervisor"].queryset = User.objects.filter(role=User.Role.SUPERVISOR)
+        self.fields["description"].label = "What are you going to build?"
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.add_input(Submit("submit", "Submit Proposal", css_class="btn btn-primary"))
 
 
 class ProjectDecisionForm(forms.Form):

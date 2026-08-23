@@ -23,9 +23,23 @@
                 <span class="small">{{ completed_tasks }} of {{ total_tasks }} tasks done</span>
             </div>
         </div>
-        <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg flex-shrink-0">
-            <i class="bi bi-plus-lg me-1"></i>New Project
-        </a>
+        {% if user.is_supervisor %}
+            <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg flex-shrink-0">
+                <i class="bi bi-plus-lg me-1"></i>New Project
+            </a>
+        {% else %}
+            <div class="d-flex flex-column flex-sm-row gap-2 flex-shrink-0">
+                <a href="{% url 'projects:project_list' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-folder2 me-1"></i>{% if my_proposal and my_proposal.status == 'PENDING' %}Pending Project{% else %}Assigned Projects{% endif %}
+                </a>
+                <a href="{% if submission_target %}{{ submission_target.get_absolute_url }}{% else %}{% url 'projects:proposal_create' %}{% endif %}" class="btn btn-success btn-lg">
+                    <i class="bi bi-file-earmark-arrow-up me-1"></i>Project Submission
+                </a>
+                <a href="{% url 'projects:proposal_create' %}" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-lightbulb me-1"></i>Project Proposal
+                </a>
+            </div>
+        {% endif %}
     </div>
 </section>
 
@@ -115,7 +129,11 @@
                 {% else %}
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No projects yet. <a href="{% url 'projects:project_create' %}">Create your first project</a>.
+                        {% if user.is_supervisor %}
+                            No projects yet. <a href="{% url 'projects:project_create' %}">Create your first project</a>.
+                        {% else %}
+                            No assigned projects yet. <a href="{% url 'projects:proposal_create' %}">Submit a project proposal</a> for your supervisor to review.
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>

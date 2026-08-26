@@ -349,6 +349,47 @@ class ProposalCreateView(RoleRequiredMixin, CreateView):
         return context
 
 
+class ProposalUpdateView(LoginRequiredMixin, UpdateView):
+    """Students can edit a declined proposal and resubmit it for review."""
+
+    model = ProjectProposal
+    form_class = ProjectProposalForm
+    template_name = "projects/proposal_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        proposal = self.get_object()
+        if request.user != proposal.student:
+            raise PermissionDenied
+        if proposal.status != ProjectProposal.Status.DECLINED:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.status = ProjectProposal.Status.PENDING
+        form.instance.supervisor_feedback = ""
+        form.instance.reviewed_by = None
+        form.instance.reviewed_at = None
+        response = super().form_valid(form)
+        log_activity(self.request.user, "resubmitted project proposal", self.object.title)
+        Notification.objects.create(
+            user=self.object.supervisor,
+            title="Proposal resubmitted",
+            message=f"{self.request.user} resubmitted the proposal '{self.object.title}' for your review.",
+            url=reverse("projects:proposal_detail", args=[self.object.pk]),
+        )
+        messages.success(self.request, f"Proposal resubmitted to {self.object.supervisor} for review.")
+        return response
+
+    def get_success_url(self):
+        return reverse("projects:proposal_detail", args=[self.object.pk])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "proposals"
+        context["page_title"] = "Edit Proposal"
+        return context
+
+
 @login_required
 @require_POST
 def proposal_decide(request, pk):

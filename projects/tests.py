@@ -484,6 +484,62 @@ class ProposalFlowTests(TestCase):
         self.assertTrue(proposal.proposal_document)
         self.assertTrue(proposal.proposal_document.name.endswith(".pdf"))
 
+    def test_student_can_edit_declined_proposal(self):
+        self.proposal.status = ProjectProposal.Status.DECLINED
+        self.proposal.supervisor_feedback = "Narrow the scope."
+        self.proposal.save()
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("projects:proposal_update", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Edit Proposal")
+
+    def test_edit_resubmits_to_pending(self):
+        self.proposal.status = ProjectProposal.Status.DECLINED
+        self.proposal.supervisor_feedback = "Revise."
+        self.proposal.save()
+        self.client.force_login(self.student)
+        self.client.post(
+            reverse("projects:proposal_update", args=[self.proposal.pk]),
+            {
+                "supervisor": self.supervisor.pk,
+                "title": "Campus Navigator v2",
+                "description": "Updated campus map.",
+            },
+        )
+        self.proposal.refresh_from_db()
+        self.assertEqual(self.proposal.status, ProjectProposal.Status.PENDING)
+        self.assertEqual(self.proposal.supervisor_feedback, "")
+        self.assertIsNone(self.proposal.reviewed_by)
+
+    def test_edit_denied_for_non_owner(self):
+        self.proposal.status = ProjectProposal.Status.DECLINED
+        self.proposal.save()
+        other = User.objects.create_user(username="other", email="other@example.com", password="x")
+        other.role = User.Role.STUDENT
+        other.save()
+        self.client.force_login(other)
+        response = self.client.get(reverse("projects:proposal_update", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_edit_denied_when_not_declined(self):
+        self.proposal.status = ProjectProposal.Status.PENDING
+        self.proposal.save()
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("projects:proposal_update", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_project_detail_hides_approve_decline_after_decision(self):
+        from django.utils import timezone as tz
+        self.client.force_login(self.supervisor)
+        project = Project.objects.create(
+            title="Decided Project", owner=self.student, supervisor=self.supervisor,
+            approval_status=Project.ApprovalStatus.DECLINED, decided_by=self.supervisor,
+            decided_at=tz.now(),
+        )
+        response = self.client.get(reverse("projects:project_detail", args=[project.pk]))
+        self.assertNotContains(response, "value=\"approve\"")
+        self.assertNotContains(response, "value=\"decline\"")
+
 
 class TaskViewTests(TestCase):
     def setUp(self):

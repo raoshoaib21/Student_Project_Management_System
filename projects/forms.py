@@ -64,7 +64,7 @@ class ProjectProposalForm(forms.ModelForm):
 
     class Meta:
         model = ProjectProposal
-        fields = ("supervisor", "title", "description")
+        fields = ("supervisor", "title", "description", "proposal_document")
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
         }
@@ -73,8 +73,10 @@ class ProjectProposalForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["supervisor"].queryset = User.objects.filter(role=User.Role.SUPERVISOR)
         self.fields["description"].label = "What are you going to build?"
+        self.fields["proposal_document"].label = "Upload Proposal Document"
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_enctype = "multipart/form-data"
         self.helper.add_input(Submit("submit", "Submit Proposal", css_class="btn btn-primary"))
 
 

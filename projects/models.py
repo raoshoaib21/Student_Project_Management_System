@@ -113,6 +113,12 @@ class ProjectProposal(models.Model):
     )
     title = models.CharField(max_length=200)
     description = models.TextField(help_text="What are you going to build and why?")
+    proposal_document = models.FileField(
+        upload_to="proposals/",
+        null=True,
+        blank=True,
+        help_text="Optional: upload a document with your proposal details.",
+    )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     supervisor_feedback = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(

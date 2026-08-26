@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -32,6 +32,72 @@ from .permissions import (
     is_project_supervisor,
     scoped_projects,
 )
+
+
+def proposal_detail_view(request, pk):
+    """Supervisor: review proposal + download document + decide.
+    Student: view own proposal status and feedback."""
+    proposal = get_object_or_404(
+        ProjectProposal.objects.select_related("student", "supervisor", "reviewed_by", "project"),
+        pk=pk,
+    )
+    user = request.user
+    if user.is_student and proposal.student_id != user.id:
+        raise PermissionDenied
+    if user.is_supervisor and proposal.supervisor_id != user.id:
+        raise PermissionDenied
+
+    if request.method == "POST" and user.is_supervisor and proposal.status == ProjectProposal.Status.PENDING:
+        form = ProjectDecisionForm(request.POST)
+        if form.is_valid():
+            decision = form.cleaned_data["decision"]
+            feedback = form.cleaned_data["decision_note"]
+            proposal.supervisor_feedback = feedback
+            proposal.reviewed_by = user
+            proposal.reviewed_at = timezone.now()
+
+            if decision == "approve":
+                if not proposal.project:
+                    project = Project.objects.create(
+                        title=proposal.title,
+                        description=proposal.description,
+                        owner=user,
+                        supervisor=user,
+                    )
+                    ProjectMember.objects.create(
+                        project=project, user=proposal.student, role=ProjectMember.Role.LEADER,
+                    )
+                    proposal.project = project
+                proposal.status = ProjectProposal.Status.APPROVED
+                log_activity(user, "approved proposal", proposal.title)
+                Notification.objects.create(
+                    user=proposal.student,
+                    title="Proposal approved",
+                    message=f"{user} approved your proposal '{proposal.title}'. The project is now assigned to you.",
+                    url=proposal.project.get_absolute_url() if proposal.project else reverse("projects:project_list"),
+                )
+                messages.success(request, f"Proposal approved — '{proposal.title}' is now an assigned project.")
+            else:
+                proposal.status = ProjectProposal.Status.DECLINED
+                log_activity(user, "declined proposal", proposal.title)
+                Notification.objects.create(
+                    user=proposal.student,
+                    title="Proposal declined",
+                    message=f"{user} declined your proposal '{proposal.title}'."
+                    + (f" Feedback: {feedback}" if feedback else ""),
+                    url=reverse("projects:proposal_list"),
+                )
+                messages.success(request, f"Proposal '{proposal.title}' declined with feedback.")
+            proposal.save()
+            return HttpResponseRedirect(reverse("projects:proposal_list"))
+    else:
+        form = ProjectDecisionForm()
+
+    return render(request, "projects/proposal_detail.html", {
+        "proposal": proposal,
+        "decision_form": form,
+        "active_page": "proposals",
+    })
 
 User = get_user_model()
 
@@ -268,7 +334,7 @@ class ProposalCreateView(RoleRequiredMixin, CreateView):
             user=self.object.supervisor,
             title="New project proposal",
             message=f"{self.request.user} submitted a proposal '{self.object.title}' for your review.",
-            url=reverse("projects:proposal_list"),
+            url=reverse("projects:proposal_detail", args=[self.object.pk]),
         )
         messages.success(self.request, f"Proposal sent to {self.object.supervisor} for review.")
         return response

@@ -419,6 +419,71 @@ class ProposalFlowTests(TestCase):
         self.assertIn("Campus Navigator", titles)
         self.assertNotIn("Not mine", titles)
 
+    def test_proposal_detail_view_student_can_open(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        doc = SimpleUploadedFile("proposal.pdf", b"file-content", content_type="application/pdf")
+        self.proposal.proposal_document = doc
+        self.proposal.save()
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("projects:proposal_detail", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Campus Navigator")
+        self.assertContains(response, "Attached Document")
+
+    def test_proposal_detail_view_student_cannot_open_others(self):
+        other = User.objects.create_user(username="other", email="other@example.com", password="x")
+        other.role = User.Role.STUDENT
+        other.save()
+        self.client.force_login(other)
+        response = self.client.get(reverse("projects:proposal_detail", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_proposal_detail_view_supervisor_can_open(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("projects:proposal_detail", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Approve Proposal")
+        self.assertContains(response, "Decline Proposal")
+
+    def test_proposal_detail_view_other_supervisor_denied(self):
+        self.client.force_login(self.other_supervisor)
+        response = self.client.get(reverse("projects:proposal_detail", args=[self.proposal.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_proposal_detail_decide_from_detail_page(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.post(
+            reverse("projects:proposal_decide", args=[self.proposal.pk]),
+            {"decision": "approve", "decision_note": "Looks good."},
+        )
+        self.proposal.refresh_from_db()
+        self.assertEqual(self.proposal.status, ProjectProposal.Status.APPROVED)
+
+    def test_proposal_list_shows_view_button(self):
+        self.client.force_login(self.supervisor)
+        response = self.client.get(reverse("projects:proposal_list"))
+        self.assertContains(response, "View")
+
+    def test_proposal_create_with_document(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_login(self.student)
+        doc = SimpleUploadedFile("my_plan.pdf", b"plan-content", content_type="application/pdf")
+        response = self.client.post(
+            reverse("projects:proposal_create"),
+            {
+                "supervisor": self.supervisor.pk,
+                "title": "AI Tutor",
+                "description": "An AI-based tutoring system.",
+                "proposal_document": doc,
+            },
+        )
+        self.assertRedirects(response, reverse("projects:proposal_list"))
+        proposal = ProjectProposal.objects.get(title="AI Tutor")
+        self.assertTrue(proposal.proposal_document)
+        self.assertTrue(proposal.proposal_document.name.endswith(".pdf"))
+
 
 class TaskViewTests(TestCase):
     def setUp(self):

@@ -6,11 +6,14 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, TemplateView
 
+from accounts.models import User
+from documents.models import Document
+from progress.models import ProgressReport
 from projects.models import Project, ProjectProposal, Task
 from projects.permissions import scoped_projects
 
 from .forms import ContactForm
-from .models import Notification
+from .models import ActivityLog, Notification
 
 
 def health(request):
@@ -39,29 +42,62 @@ class ContactView(FormView):
 @login_required
 def dashboard(request):
     user = request.user
-    projects = scoped_projects(user).prefetch_related("members", "tasks")
-    tasks = Task.objects.filter(project__in=projects)
+    is_admin = user.is_staff
 
-    my_tasks = tasks.filter(assignee=user) if user.is_student else Task.objects.none()
+    if is_admin:
+        all_projects = Project.objects.all().prefetch_related("members", "tasks")
+        all_tasks = Task.objects.all()
+        all_proposals = ProjectProposal.objects.select_related("student", "supervisor", "project").all()
+        all_users = User.objects.all()
+        all_activities = ActivityLog.objects.select_related("user").all()[:15]
+        recent_notifications = Notification.objects.select_related("user").all()[:10]
 
-    context = {
-        "active_page": "dashboard",
-        "projects": projects,
-        "total_projects": projects.count(),
-        "total_tasks": tasks.count(),
-        "pending_tasks": tasks.exclude(status=Task.Status.DONE).count(),
-        "completed_tasks": tasks.filter(status=Task.Status.DONE).count(),
-        "my_tasks": my_tasks,
-        "recent_activities": user.activities.all()[:10],
-    }
-    if user.is_student:
-        context["my_proposal"] = (
-            ProjectProposal.objects.filter(student=user).order_by("-created_at").first()
-        )
-        context["submission_target"] = (
-            projects.filter(members__user=user, status=Project.Status.COMPLETED).first()
-            or projects.filter(members__user=user).first()
-        )
+        context = {
+            "active_page": "dashboard",
+            "is_admin": True,
+            "projects": all_projects,
+            "total_projects": all_projects.count(),
+            "total_tasks": all_tasks.count(),
+            "pending_tasks": all_tasks.exclude(status=Task.Status.DONE).count(),
+            "completed_tasks": all_tasks.filter(status=Task.Status.DONE).count(),
+            "my_tasks": Task.objects.none(),
+            "recent_activities": all_activities,
+            "all_proposals": all_proposals,
+            "total_proposals": all_proposals.count(),
+            "pending_proposals": all_proposals.filter(status=ProjectProposal.Status.PENDING).count(),
+            "approved_proposals": all_proposals.filter(status=ProjectProposal.Status.APPROVED).count(),
+            "declined_proposals": all_proposals.filter(status=ProjectProposal.Status.DECLINED).count(),
+            "all_users": all_users,
+            "total_users": all_users.count(),
+            "total_students": all_users.filter(role=User.Role.STUDENT).count(),
+            "total_supervisors": all_users.filter(role=User.Role.SUPERVISOR).count(),
+            "total_documents": Document.objects.count(),
+            "total_reports": ProgressReport.objects.count(),
+            "recent_notifications": recent_notifications,
+        }
+    else:
+        projects = scoped_projects(user).prefetch_related("members", "tasks")
+        tasks = Task.objects.filter(project__in=projects)
+        my_tasks = tasks.filter(assignee=user) if user.is_student else Task.objects.none()
+
+        context = {
+            "active_page": "dashboard",
+            "projects": projects,
+            "total_projects": projects.count(),
+            "total_tasks": tasks.count(),
+            "pending_tasks": tasks.exclude(status=Task.Status.DONE).count(),
+            "completed_tasks": tasks.filter(status=Task.Status.DONE).count(),
+            "my_tasks": my_tasks,
+            "recent_activities": user.activities.all()[:10],
+        }
+        if user.is_student:
+            context["my_proposal"] = (
+                ProjectProposal.objects.filter(student=user).order_by("-created_at").first()
+            )
+            context["submission_target"] = (
+                projects.filter(members__user=user, status=Project.Status.COMPLETED).first()
+                or projects.filter(members__user=user).first()
+            )
     return render(request, "core/dashboard.html", context)
 
 

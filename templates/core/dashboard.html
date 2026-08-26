@@ -7,8 +7,9 @@
         <div class="flex-grow-1" style="min-width:240px;">
             <div class="hero-eyebrow">Student Project Management System</div>
             <h1 class="hero-title">Welcome back, {{ user.get_full_name|default:user.username }}</h1>
-            <p class="hero-subtitle">Signed in as <strong>{{ user.get_role_display }}</strong>. Here's how your projects are moving.</p>
+            <p class="hero-subtitle">Signed in as <strong>{% if is_admin %}System Administrator{% else %}{{ user.get_role_display }}{% endif %}</strong>. Here's how your {% if is_admin %}system{% else %}projects{% endif %} are moving.</p>
         </div>
+        {% if not is_admin %}
         <div class="hero-progress flex-grow-1" style="min-width:200px;">
             <div class="hero-progress-label">
                 <span>Overall completion</span>
@@ -23,7 +24,17 @@
                 <span class="small">{{ completed_tasks }} of {{ total_tasks }} tasks done</span>
             </div>
         </div>
-        {% if user.is_supervisor %}
+        {% endif %}
+        {% if is_admin %}
+            <div class="d-flex gap-2 flex-shrink-0">
+                <a href="{% url 'admin:index' %}" class="btn btn-dark btn-lg">
+                    <i class="bi bi-gear me-1"></i>Django Admin
+                </a>
+                <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-lg me-1"></i>New Project
+                </a>
+            </div>
+        {% elif user.is_supervisor %}
             <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg flex-shrink-0">
                 <i class="bi bi-plus-lg me-1"></i>New Project
             </a>
@@ -42,6 +53,233 @@
         {% endif %}
     </div>
 </section>
+
+{% if is_admin %}
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3 reveal">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon primary"><i class="bi bi-people"></i></div>
+                <div>
+                    <div class="stat-label">Users</div>
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="text-muted small">{{ total_students }} students &middot; {{ total_supervisors }} supervisors</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3 reveal">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon info"><i class="bi bi-folder2-open"></i></div>
+                <div>
+                    <div class="stat-label">Projects</div>
+                    <div class="stat-value">{{ total_projects }}</div>
+                    <div class="text-muted small">{{ total_tasks }} tasks total</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3 reveal">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon warning"><i class="bi bi-lightbulb"></i></div>
+                <div>
+                    <div class="stat-label">Proposals</div>
+                    <div class="stat-value">{{ total_proposals }}</div>
+                    <div class="text-muted small">{{ pending_proposals }} pending &middot; {{ approved_proposals }} approved</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3 reveal">
+        <div class="card stat-card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon success"><i class="bi bi-file-earmark"></i></div>
+                <div>
+                    <div class="stat-label">Documents</div>
+                    <div class="stat-value">{{ total_documents }}</div>
+                    <div class="text-muted small">{{ total_reports }} progress reports</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-lightbulb me-2"></i>All Proposals</span>
+                <a href="{% url 'projects:proposal_list' %}" class="btn btn-sm btn-link">View all</a>
+            </div>
+            <div class="card-body">
+                {% if all_proposals %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Proposal</th>
+                                    <th>Student</th>
+                                    <th>Supervisor</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for proposal in all_proposals|slice:":10" %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'projects:proposal_detail' proposal.pk %}" class="text-decoration-none fw-semibold">{{ proposal.title }}</a>
+                                        </td>
+                                        <td>{{ proposal.student }}</td>
+                                        <td>{{ proposal.supervisor }}</td>
+                                        <td>
+                                            <span class="badge text-bg-{% if proposal.status == 'APPROVED' %}success{% elif proposal.status == 'DECLINED' %}danger{% else %}warning{% endif %}">
+                                                {{ proposal.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ proposal.created_at|date:"M j, Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-lightbulb fs-1 d-block mb-2"></i>No proposals yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>Users</span>
+                <a href="{% url 'admin:index' %}" class="btn btn-sm btn-link">Manage</a>
+            </div>
+            <div class="card-body">
+                {% if all_users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in all_users|slice:":10" %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">{{ u.get_full_name|default:u.username }}</div>
+                                            <div class="text-muted small">{{ u.email }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge text-bg-{% if u.role == 'SUPERVISOR' %}info{% else %}secondary{% endif %}">
+                                                {{ u.get_role_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if u.is_active %}
+                                                <span class="badge text-bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge text-bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">No users yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-folder2-open me-2"></i>All Projects</span>
+                <a href="{% url 'projects:project_list' %}" class="btn btn-sm btn-link">View all</a>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Owner</th>
+                                    <th>Supervisor</th>
+                                    <th>Status</th>
+                                    <th>Approval</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects|slice:":10" %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ project.get_absolute_url }}" class="text-decoration-none fw-semibold">{{ project.title }}</a>
+                                            <div class="text-muted small">{{ project.members.count }} members</div>
+                                        </td>
+                                        <td>{{ project.owner }}</td>
+                                        <td>{{ project.supervisor }}</td>
+                                        <td>
+                                            <span class="badge text-bg-{% if project.status == 'COMPLETED' %}success{% elif project.status == 'ON_HOLD' %}warning{% elif project.status == 'CANCELLED' %}danger{% else %}primary{% endif %}">{{ project.get_status_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge text-bg-{% if project.approval_status == 'APPROVED' %}success{% elif project.approval_status == 'DECLINED' %}danger{% else %}warning{% endif %}">
+                                                {{ project.get_approval_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>No projects yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-clock-history me-2"></i>System Activity
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    <ul class="list-unstyled mb-0">
+                        {% for activity in recent_activities %}
+                            <li class="border-bottom py-2">
+                                <div class="fw-semibold">{{ activity.action }}</div>
+                                <div class="text-muted small">
+                                    {{ activity.user }} &middot; {{ activity.target|default:"—" }} &middot; {{ activity.created_at|timesince }} ago
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-activity fs-1 d-block mb-2"></i>No activity recorded yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
 
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-lg-3 reveal">
@@ -213,4 +451,5 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}

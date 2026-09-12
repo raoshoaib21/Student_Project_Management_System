@@ -16,8 +16,11 @@ from .forms import ContactForm
 from .models import ActivityLog, Notification
 
 
+VERSION_TAG = "v-d144402"
+
+
 def health(request):
-    return HttpResponse("ok")
+    return HttpResponse(f"ok {VERSION_TAG}")
 
 
 class LandingView(TemplateView):

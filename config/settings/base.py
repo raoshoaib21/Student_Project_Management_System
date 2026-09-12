@@ -117,6 +117,7 @@ LOGIN_REQUIRED_IGNORE_PATHS = [
     "/static/",
     "/media/",
     "/health/",
+    "/_diag/",
 ]
 LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
     "landing",
